@@ -852,8 +852,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Layout from "../../Layout/Layout";
-import { useQuill } from "react-quilljs";
-import "quill/dist/quill.snow.css";
+// import { useQuill } from "react-quilljs";
+// import "quill/dist/quill.snow.css";
 import { useDispatch, useSelector } from "react-redux";
 import { deleteBlog, getAllBlogs } from "../../Redux/blogSlice";
 import { useNavigate } from "react-router-dom";
@@ -881,18 +881,18 @@ const UserDashboard = () => {
   const [userViews, setUserViews] = useState({});
   const [userComments, setUserComments] = useState({});
 
-  const { quillRef } = useQuill({
-    theme: "snow",
-    modules: {
-      toolbar: [
-        ["bold", "italic", "underline"],
-        [{ header: [1, 2, 3, false] }],
-        ["link", "image"],
-        [{ list: "ordered" }, { list: "bullet" }],
-        ["blockquote", "code-block"],
-      ],
-    },
-  });
+  // const { quillRef } = useQuill({
+  //   theme: "snow",
+  //   modules: {
+  //     toolbar: [
+  //       ["bold", "italic", "underline"],
+  //       [{ header: [1, 2, 3, false] }],
+  //       ["link", "image"],
+  //       [{ list: "ordered" }, { list: "bullet" }],
+  //       ["blockquote", "code-block"],
+  //     ],
+  //   },
+  // });
 
   useEffect(() => {
     dispatch(getAllBlogs());

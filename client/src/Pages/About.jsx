@@ -96,7 +96,7 @@ const About = () => {
             className="w-full md:w-1/2 space-y-6 text-center md:text-left"
           >
             <h1 className="text-3xl md:text-5xl text-yellow-500 font-bold leading-tight">
-              Inspiring Blogs for Everyone
+              Excel for Everyone
             </h1>
             <p className="text-lg md:text-xl text-gray-300 leading-relaxed">
               Our mission is to share valuable stories, insights, and knowledge

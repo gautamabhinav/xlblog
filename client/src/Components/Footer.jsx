@@ -46,7 +46,7 @@ const Footer = () => {
           {/* Brand + tagline */}
           <div className="space-y-4">
             <h3 className="text-2xl font-bold tracking-tight text-white">
-              Blogging Platform
+              Excel Analytics Blogging Platform
             </h3>
             <p className="text-sm text-zinc-300 max-w-sm">
               Where ideas meet readers — publish, share, and discover thoughtful
@@ -114,14 +114,14 @@ const Footer = () => {
                   Home
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   to="/blogs"
                   className="hover:text-white transition-colors"
                 >
                   All Blogs
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
                   to="/about"

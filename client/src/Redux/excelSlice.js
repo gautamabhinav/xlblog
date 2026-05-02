@@ -502,19 +502,21 @@ const excelSlice = createSlice({
       })
 
       // Get single file
-      // .addCase(getExcelFileById.pending, (state) => {
-      //   state.status.fetchSingle = "loading";
-      //   state.error.fetchSingle = null;
-      // })
-      // .addCase(getExcelFileById.fulfilled, (state, action) => {
-      //   state.status.fetchSingle = "succeeded";
-      //   state.error.fetchSingle = null;
-      //   state.currentFile = action.payload;
-      // })
-      // .addCase(getExcelFileById.rejected, (state, action) => {
-      //   state.status.fetchSingle = "failed";
-      //   state.error.fetchSingle = action.payload;
-      // })
+      .addCase(getExcelFileById.pending, (state) => {
+        state.status.fetchSingle = "loading";
+        state.error.fetchSingle = null;
+      })
+      .addCase(getExcelFileById.fulfilled, (state, action) => {
+        state.status.fetchSingle = "succeeded";
+        state.error.fetchSingle = null;
+        // action.payload may be the file object or an object containing { file }
+        const file = action.payload?.file || action.payload;
+        state.currentFile = file || null;
+      })
+      .addCase(getExcelFileById.rejected, (state, action) => {
+        state.status.fetchSingle = "failed";
+        state.error.fetchSingle = action.payload;
+      })
 
       // Delete
       // .addCase(deleteExcelFile.fulfilled, (state, action) => {

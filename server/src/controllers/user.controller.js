@@ -109,7 +109,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   user.password = undefined;
 
   // Setting the token in the cookie with name token along with cookieOptions
-  res.cookie('jwt', token, cookieOptions);
+  res.cookie('token', token, cookieOptions);
 
   // If all good send the response to the frontend
   res.status(201).json({
@@ -150,7 +150,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
   user.password = undefined;
 
   // Setting the token in the cookie with name token along with cookieOptions
-  res.cookie('jwt', token, cookieOptions);
+  res.cookie('token', token, cookieOptions);
 
   // If all good send the response to the frontend
   res.status(200).json({
@@ -183,7 +183,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 export const logoutUser = asyncHandler(async (_req, res, _next) => {
   // Clear the cookie properly for cross-domain - jwt/token
   res.cookie('jwt', null, {
-    secure: process.env.NODE_ENV === 'production' ? "true" : "Lax", // true in production
+    secure: process.env.NODE_ENV === 'production', // true in production
     httpOnly: true,
     sameSite: 'None', // important for cross-domain cookies
     maxAge: 0,

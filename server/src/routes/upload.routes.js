@@ -16,11 +16,11 @@ const router = Router();
 router
   .route("/")
   .get(ipLimiter, getAllExcelFiles) // anyone can fetch metadata
-  .post(ipLimiter, isLoggedIn, authorizeRoles("ADMIN"), upload.single("excel"), uploadExcel);
+  .post(ipLimiter, isLoggedIn, authorizeRoles("USER","ADMIN", "SUPERADMIN"), upload.single("excel"), uploadExcel);
 
 router
   .route("/:id")
   .get(ipLimiter, isLoggedIn, validateObjectId, getExcelFileById)
-  .delete(ipLimiter, isLoggedIn,  authorizeRoles("ADMIN"), validateObjectId, deleteExcelFileById);
+  .delete(ipLimiter, isLoggedIn,  authorizeRoles("USER","ADMIN", "SUPERADMIN"), validateObjectId, deleteExcelFileById);
 
 export default router;

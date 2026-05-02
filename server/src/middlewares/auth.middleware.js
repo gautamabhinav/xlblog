@@ -35,7 +35,8 @@ import asyncHandler from "./asyncHandler.middleware.js";
 
 
 export const isLoggedIn = asyncHandler(async (req, _res, next) => {
-  const { jwt: token } = req.cookies; // ✅ match cookie name
+  // const { jwt: token } = req.cookies; // ✅ match cookie name
+  const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(' ')[1]);
 
   if (!token) {
     return next(new AppError("Unauthorized, please login to continue", 401));
