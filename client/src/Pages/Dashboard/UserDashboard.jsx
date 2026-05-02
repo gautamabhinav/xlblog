@@ -859,6 +859,8 @@ import { deleteBlog, getAllBlogs } from "../../Redux/blogSlice";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { AiOutlineDelete, AiOutlineEdit, AiOutlineEye } from "react-icons/ai";
+import api from "../../Helper/axiosInstance";
+import { Link } from "react-router-dom";
 
 const TAG_OPTIONS = ["Development", "React", "Node", "Design", "Product", "Tutorial"];
 
@@ -880,6 +882,10 @@ const UserDashboard = () => {
   });
   const [userViews, setUserViews] = useState({});
   const [userComments, setUserComments] = useState({});
+  const [attempts, setAttempts] = useState([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
+  const notifications = useSelector((s) => s.notifications?.list || []);
+  const notifLoading = useSelector((s) => s.notifications?.loading || false);
 
   // const { quillRef } = useQuill({
   //   theme: "snow",
@@ -914,6 +920,21 @@ const UserDashboard = () => {
       setSettings((s) => ({ ...s, persistLikes: persist, permanentLocalData: permanent }));
     } catch (e) {}
   }, []);
+
+    // load user's attempts for My Test Results panel
+    useEffect(() => { loadAttempts(); }, []);
+
+    const loadAttempts = async () => {
+      setAttemptsLoading(true);
+      try {
+        const res = await api.get('/tests/attempts/me');
+        setAttempts(res.data.attempts || []);
+      } catch (e) {
+        console.error('Failed to load attempts', e);
+        setAttempts([]);
+      }
+      setAttemptsLoading(false);
+    };
 
   useEffect(() => {
     try {
@@ -1181,6 +1202,93 @@ const UserDashboard = () => {
                     likedBlogs.map((b) => <BlogCard key={b._id} b={b} allowUnlike />)
                   )}
                 </div>
+              </section>
+
+              {/* User Activity (notifications + attempts) */}
+              <section id="user-activity" className="mt-6">
+                <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
+                {(attemptsLoading || notifLoading) ? (
+                  <div>Loading...</div>
+                ) : (
+                  (() => {
+                    // merge attempts and notifications into a timeline
+                    const items = [
+                      ...((notifications || []).map((n) => ({
+                        type: 'notification',
+                        id: n._id,
+                        title: n.title || n.message,
+                        desc: n.message,
+                        date: n.createdAt,
+                        meta: n,
+                      }))),
+                      ...((attempts || []).map((a) => ({
+                        type: 'attempt',
+                        id: a._id,
+                        title: a.test?.title || 'Test attempt',
+                        desc: `${a.score} / ${a.maxScore} — ${Math.round((a.score / Math.max(1,a.maxScore))*100)}%`,
+                        date: a.createdAt,
+                        meta: a,
+                      })))
+                    ];
+                    items.sort((x,y) => new Date(y.date) - new Date(x.date));
+
+                    if (items.length === 0) return <div className="text-sm text-gray-400">No recent activity</div>;
+
+                    return (
+                      <div className="space-y-3">
+                        {items.map((it) => (
+                          <div key={it.type + '-' + it.id} className="p-3 bg-white/5 rounded flex items-start justify-between">
+                            <div>
+                              <div className="text-sm font-semibold">{it.title}</div>
+                              <div className="text-xs text-gray-300">{it.desc}</div>
+                              <div className="text-xs text-gray-500 mt-1">{new Date(it.date).toLocaleString()}</div>
+                            </div>
+                            <div className="text-sm">
+                              {it.type === 'notification' ? (
+                                <a href={it.meta?.link || '#'} className="text-indigo-400">Open</a>
+                              ) : (
+                                <Link to={`/tests/result/${it.id}`} className="text-indigo-400">View Result</Link>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()
+                )}
+              </section>
+
+              {/* My Test Results panel */}
+              <section id="my-test-results" className="mt-6">
+                <h3 className="text-xl font-semibold mb-4">My Test Results</h3>
+                {attemptsLoading ? (
+                  <div>Loading...</div>
+                ) : (
+                  <div className="bg-white rounded shadow overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2">Test</th>
+                          <th className="px-4 py-2">Score</th>
+                          <th className="px-4 py-2">Percent</th>
+                          <th className="px-4 py-2">Taken At</th>
+                          <th className="px-4 py-2">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attempts.map((a) => (
+                          <tr key={a._id} className="border-t">
+                            <td className="px-4 py-2">{a.test?.title}</td>
+                            <td className="px-4 py-2">{a.score} / {a.maxScore}</td>
+                            <td className="px-4 py-2">{Math.round((a.score / Math.max(1,a.maxScore))*100)}%</td>
+                            <td className="px-4 py-2">{new Date(a.createdAt).toLocaleString()}</td>
+                            <td className="px-4 py-2"><Link to={`/tests/result/${a._id}`} className="text-indigo-600">View</Link></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
 
               <section id="settings" className="bg-white/5 p-4 rounded-xl">

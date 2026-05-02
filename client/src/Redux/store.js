@@ -10,6 +10,7 @@ import aiReducer from "../Redux/aiSlice"
 import commentSliceReducer from "../Redux/commentSlice";
 import likeSliceReducer from "../Redux/likeSlice";
 import notificationReducer from './notificationSlice';
+import testReducer from './testSlice';
 
 const store = configureStore({
   reducer: {
@@ -24,6 +25,7 @@ const store = configureStore({
   notifications: notificationReducer,
     stat: statSliceReducer,
     ai: aiReducer, 
+    tests: testReducer,
   },
 });
 

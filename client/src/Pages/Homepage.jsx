@@ -145,23 +145,23 @@ const Homepage = () => {
             <div className="mt-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="relative w-full sm:w-96">
                 {/* <HiOutlineSearch className="absolute left-3 top-3 text-gray-400" /> */}
-                {/* <input
+                <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search title or author"
+                  placeholder="Search "
                   className="pl-10 pr-3 py-2 w-full bg-zinc-800 rounded-md border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                /> */}
+                />
                 {/* Voice search button (AI UX) */}
-                {/* <button
+                <button
                   type="button"
                   onClick={startVoiceSearch}
                   className={`absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-500 hover:bg-yellow-600 text-black p-2 rounded-full ${isListening ? 'ring-2 ring-yellow-300' : ''}`}
                   title={isListening ? 'Listening...' : 'Voice search'}
                 >
                   {isListening ? '🎙️' : '🗣️'}
-                </button> */}
+                </button>
                 {/* Suggestions dropdown */}
-                {/* {suggestions.length > 0 && (
+                {suggestions.length > 0 && (
                   <div className="absolute left-0 mt-12 w-full bg-zinc-900 border border-zinc-700 rounded shadow-lg z-20">
                     {suggestions.map((s) => (
                       <button
@@ -173,26 +173,31 @@ const Homepage = () => {
                       </button>
                     ))}
                   </div>
-                )} */}
+                )}
               </div>
-              {/* <div className="flex gap-3">
+              <div className="flex gap-3">
                 <Link to="/blogs">
                   <button className="bg-yellow-500 px-5 py-2 rounded-md font-semibold hover:bg-yellow-600 transition">
                     Explore Blogs
                   </button>
                 </Link>
-              </div> */}
+                {/** Show CSV/PDF test upload CTA for admins */}
+                {/* role is derived from redux in Layout; use a simple link for admins */}
+                <Link to="/tests/upload-pdf">
+                  <button className="bg-white/10 px-4 py-2 rounded-md font-semibold hover:bg-white/20 transition">Create Test (PDF)</button>
+                </Link>
+              </div>
             </div>
 
             <div className="mt-6 flex gap-6">
-              {/* <div>
+              <div>
                 <p className="text-2xl font-bold text-yellow-400">{blogsData.length}</p>
                 <p className="text-gray-300">Published posts</p>
-              </div> */}
-              {/* <div>
+              </div>
+              <div>
                 <p className="text-2xl font-bold text-yellow-400">{Math.max(100, blogsData.length * 5)}</p>
                 <p className="text-gray-300">Readers (est.)</p>
-              </div> */}
+              </div>
               <div>
                 <p className="text-2xl font-bold text-yellow-400">{excelFiles.length}</p>
                 <p className="text-gray-300">Excel files uploaded</p>
@@ -213,7 +218,7 @@ const Homepage = () => {
         </div>
 
         {/* FEATURED CAROUSEL */}
-        {/* <section>
+        <section>
           <h2 className="text-2xl font-semibold mb-4">Featured picks</h2>
           {featured.length === 0 && loading ? (
             <div className="flex gap-6">
@@ -301,7 +306,7 @@ const Homepage = () => {
               )}
             </div>
           )}
-        </section> */}
+        </section>
 
         {/* EXCEL & AI */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -321,7 +326,7 @@ const Homepage = () => {
         </section>
 
         {/* RECENT POSTS */}
-        {/* <section>
+        <section>
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-semibold">Recent posts</h2>
             <Link to="/blogs" className="text-yellow-400 hover:underline">View all</Link>
@@ -364,7 +369,7 @@ const Homepage = () => {
               ))
             )}
           </div>
-        </section> */}
+        </section>
 
         {/* Floating AI assistant widget */}
         <div className="fixed bottom-6 right-6 z-50">

@@ -439,10 +439,22 @@ const AdminDashboard = ({ id }) => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-yellow-400">Admin Dashboard</h1>
-            <label className="px-4 py-2 bg-indigo-600 rounded cursor-pointer hover:bg-indigo-700 transition">
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUploadFile} className="hidden" />
-              <span className="flex items-center gap-2"><FiUpload /> Upload Excel</span>
-            </label>
+            <div className="flex items-center gap-3">
+              <label className="px-4 py-2 bg-indigo-600 rounded cursor-pointer hover:bg-indigo-700 transition">
+                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUploadFile} className="hidden" />
+                <span className="flex items-center gap-2"><FiUpload /> Upload Excel</span>
+              </label>
+              <button onClick={() => navigate('/tests')} className="px-3 py-2 rounded bg-indigo-500 text-white">Tests</button>
+              {(currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') && (
+                <>
+                  <button onClick={() => navigate('/tests/upload-pdf')} className="px-3 py-2 rounded bg-pink-500 text-white">Upload Test PDF</button>
+                  <button onClick={() => navigate('/tests/create')} className="px-3 py-2 rounded bg-yellow-400 text-black">Create Test</button>
+                  <button onClick={() => navigate('/tests/attempts')} className="px-3 py-2 rounded bg-green-600 text-white">View Attempts</button>
+                </>
+              )}
+
+              
+            </div>
           </div>
 
           {/* Users */}

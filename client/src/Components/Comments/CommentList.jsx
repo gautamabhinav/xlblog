@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchComments, addComment, deleteComment } from "../../Redux/commentSlice";
+import UserAvatar from '../Common/UserAvatar';
 
 export default function CommentList({ blogId }) {
   const dispatch = useDispatch();
@@ -107,16 +108,9 @@ export default function CommentList({ blogId }) {
 };
 
   const CommentMeta = ({ node }) => {
-    const avatarUrl = node.user?.avatar?.secure_url || node.user?.avatar?.url || node.user?.avatar?.secure_url || null;
     return (
       <div className="flex items-center gap-3">
-        {avatarUrl ? (
-          <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-sm font-semibold">
-            {node.user?.fullName ? node.user.fullName.charAt(0) : (node.user?.name ? node.user.name.charAt(0) : 'A')}
-          </div>
-        )}
+        <UserAvatar user={node.user} size={32} />
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <div className="font-medium text-sm">{node.user?.fullName || node.user?.name || node.user?.role || 'Anonymous'}</div>

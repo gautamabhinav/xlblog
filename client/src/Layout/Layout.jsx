@@ -1,146 +1,10 @@
-// import React, { useState } from "react";
-// import { FiMenu } from "react-icons/fi";
-// import { Link, useNavigate } from "react-router-dom";
-// import { AiFillCloseCircle } from "react-icons/ai";
-// import Footer from "../Components/Footer";
-// import { useDispatch, useSelector } from "react-redux";
-// import { logout } from "../Redux/authSlice";
-
-// const Layout = ({ children }) => {
-//   const dispatch = useDispatch();
-//   const navigate = useNavigate();
-
-//   // for checking user logged in or not
-//   const isLoggedIn = useSelector((state) => state?.auth?.isLoggedIn);
-
-//   // for dispaying the options, according to user role
-//   const role = useSelector((state) => state?.auth?.role);
-
-//   // function to hide the drawer on close button click
-//   const hideDrawer = () => {
-//     const element = document.getElementsByClassName("drawer-toggle");
-//     element[0].checked = false;
-
-//     // collapsing the drawer-side width to zero
-//     const drawerSide = document.getElementsByClassName("drawer-side");
-//     drawerSide[0].style.width = 0;
-//   };
-
-//   // function for changing the drawer width on menu button click
-//   const changeWidth = () => {
-//     const drawerSide = document.getElementsByClassName("drawer-side");
-//     drawerSide[0].style.width = "auto";
-//   };
-
-//   // function to handle logout
-//   const handleLogout = async (event) => {
-//     event.preventDefault();
-
-//     // calling logout action
-//     const res = await dispatch(logout());
-
-//     // redirect to home page if true
-//     if (res?.payload?.success) navigate("/");
-//   };
-
-//   return (
-//     <div className="min-h-[90vh]">
-//       {/* adding the daisy ui drawer */}
-//       <div className="drawer absolute z-50 left-0 w-fit">
-//         <input id="my-drawer" type="checkbox" className="drawer-toggle" />
-//         <div className="drawer-content">
-//           <label htmlFor="my-drawer" className="cursor-pointer relative">
-//             <FiMenu
-//               onClick={changeWidth}
-//               size={"32px"}
-//               className="font-bold text-white m-4"
-//             />
-//           </label>
-//         </div>
-
-//         <div className="drawer-side w-0">
-//           <label htmlFor="my-drawer" className="drawer-overlay"></label>
-//           <ul className="menu p-4 w-48 sm:w-80 bg-base-100 text-base-content relative">
-//             {/* close button for drawer */}
-//             <li className="w-fit absolute right-2 z-50">
-//               <button onClick={hideDrawer}>
-//                 <AiFillCloseCircle size={24} />
-//               </button>
-//             </li>
-
-//             <li>
-//               <Link to={"/"}>Home</Link>
-//             </li>
-
-//             {/* displaying dashboard, if user is logged in */}
-//             {isLoggedIn && role === "ADMIN" && (
-//               <li>
-//                 <Link to={"/admin/dashboard"}>Admin Dashboard</Link>
-//               </li>
-//             )}
-
-//             <li>
-//               <Link to={"/courses"}>All Courses</Link>
-//             </li>
-
-//             <li>
-//               <Link to={"/contact"}>Contact Us</Link>
-//             </li>
-
-//             <li>
-//               <Link to={"/about"}>About Us</Link>
-//             </li>
-
-//             {/* creating the bottom part of drawer */}
-//             {/* if user is not logged in */}
-//             {!isLoggedIn && (
-//               <li className="absolute bottom-4 w-[90%]">
-//                 <div className="w-full flex items-center justify-center">
-//                   <button className="btn-primary px-4 py-1 font-semibold rounded-md w-full">
-//                     <Link to={"/login"}>Login</Link>
-//                   </button>
-//                   <button className="btn-secondary px-4 py-1 font-semibold rounded-md w-full">
-//                     <Link to={"/signup"}>Signup</Link>
-//                   </button>
-//                 </div>
-//               </li>
-//             )}
-
-//             {/* if user is logged in */}
-//             {isLoggedIn && (
-//               <li className="absolute bottom-4 w-[90%]">
-//                 <div className="w-full flex items-center justify-center">
-//                   <button className="btn-primary px-4 py-1 font-semibold rounded-md w-full">
-//                     <Link to={"/user/profile"}>Profile</Link>
-//                   </button>
-//                   <button className="btn-secondary px-4 py-1 font-semibold rounded-md w-full">
-//                     <Link onClick={handleLogout}>Logout</Link>
-//                   </button>
-//                 </div>
-//               </li>
-//             )}
-//           </ul>
-//         </div>
-//       </div>
-
-//       {children}
-
-//       {/* adding the footer content */}
-//       <Footer />
-//     </div>
-//   );
-// };
-
-// export default Layout;
-
-
-
 import React, { useState, useEffect, useRef } from "react";
 import { FiHome, FiBook, FiPhone, FiInfo, FiUser, FiFileText } from "react-icons/fi";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AiOutlineLogout, AiOutlineSearch } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "../Components/Footer";
+import UserAvatar from '../Components/Common/UserAvatar';
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../Redux/authSlice";
 import { BsMoon, BsSun } from "react-icons/bs";
@@ -230,9 +94,26 @@ const Layout = ({ children }) => {
   useEffect(() => {
     if (!socket) return;
     const onNew = (payload) => {
-      // refresh notifications list when a new notification arrives
-      dispatch(fetchNotifications());
-      try { toast.success("New notification"); } catch (e) { /* ignore */ }
+      // payload may include targeting info; ensure current user should see it
+      try {
+        const targetRoles = payload?.targetRoles || [];
+        const targetUsers = (payload?.targetUsers || []).map(String);
+        const shouldShow = (
+          (!targetRoles || targetRoles.length === 0) && (!targetUsers || targetUsers.length === 0)
+        ) || (role && targetRoles.includes(String(role).toUpperCase())) || (user && targetUsers.includes(String(user._id || user.id)));
+
+        if (shouldShow) {
+          // refresh notifications list when a new notification arrives
+          dispatch(fetchNotifications());
+          try { toast.success("New notification"); } catch (e) { /* ignore */ }
+        } else {
+          // silently ignore or optionally log for debugging
+          // console.debug('Notification received but not targeted to this user/role');
+        }
+      } catch (e) {
+        // safest behavior: refresh list if anything goes wrong
+        dispatch(fetchNotifications());
+      }
     };
     socket.on("newNotification", onNew);
     return () => {
@@ -250,6 +131,16 @@ const Layout = ({ children }) => {
       document.body.style.overflow = "";
     }
   }, [isOpen]);
+
+  // Close overlays (menu/user menu) on route change to avoid leftover full-screen backdrops
+  useEffect(() => {
+    setIsOpen(false);
+    setShowUserMenu(false);
+    setShowNotif(false);
+    // ensure body overflow is reset
+    document.body.style.overflow = "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const handleLogout = async (event) => {
     event.preventDefault();
@@ -289,7 +180,8 @@ const Layout = ({ children }) => {
         // },
       ]
     : []),
-  // { name: "All Blogs", path: "/blogs", icon: <FiBook />, desc: "Explore all posts" },
+
+  { name: "All Blogs", path: "/blogs", icon: <FiBook />, desc: "Explore all posts" },
   {
           name: "Excel Manager",
           path: "/excel",
@@ -297,7 +189,12 @@ const Layout = ({ children }) => {
           desc: "Upload & manage Excel files",
         },
 
-  // { name: "User Dashboard", path: "/user/dashboard", icon: <FiBook />, desc: "User Dashboard" },
+  // { name: "Test Take", path: "/tests/take", icon: <FiBook />, desc: "Take a test" },
+  // { name: "Test Result", path: "/tests/result", icon: <FiBook />, desc: "View test results" },
+  { name: "All Tests", path: "/tests", icon: <FiBook />, desc: "View tests" },
+  
+
+  { name: "User Dashboard", path: "/user/dashboard", icon: <FiBook />, desc: "User Dashboard" },
   { name: "Contact Us", path: "/contact", icon: <FiPhone />, desc: "Get in touch" },
   { name: "About Us", path: "/about", icon: <FiInfo />, desc: "Learn about the project" },
 ];
@@ -335,12 +232,12 @@ const Layout = ({ children }) => {
           </button>
 
           <Link to="/" className="text-lg font-bold tracking-wide hover:opacity-90">
-            Excel Analytics Platform
+            Blogging Platform
           </Link>
         </div>
 
         {/* search - visible on md+ */}
-        {/* <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-6">
+        <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-6">
           <div className="relative w-full">
             <AiOutlineSearch className="absolute left-3 top-3 text-gray-300" />
             <input
@@ -352,9 +249,27 @@ const Layout = ({ children }) => {
             />
           </div>
           <button type="submit" className="bg-yellow-400 text-black px-4 py-2 rounded-full font-semibold">Search</button>
-        </form> */}
+        </form>
 
         <div className="flex items-center gap-3">
+          {/* quick link to Tests - visible on md+ screens */}
+          <Link to="/tests" className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 hover:bg-white/20 transition text-white">
+            <FiBook />
+            <span className="hidden sm:inline">Tests</span>
+          </Link>
+
+          {/* admin quick-create test buttons */}
+          {isLoggedIn && (role === "ADMIN" || role === "SUPERADMIN") && (
+            <div className="hidden md:inline-flex items-center gap-2">
+              <Link to="/tests/create" className="items-center gap-2 px-3 py-1 rounded-md bg-yellow-400 text-black font-semibold hover:opacity-90 transition">
+                Create Test
+              </Link>
+              <Link to="/tests/upload-pdf" className="items-center gap-2 px-3 py-1 rounded-md bg-white/10 text-white font-semibold hover:opacity-90 transition">
+                Create Test (PDF)
+              </Link>
+            </div>
+          )}
+
           <button onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition" title="Toggle theme">
             {theme === "dark" ? <BsSun size={18} /> : <BsMoon size={18} />}
           </button>
@@ -375,7 +290,9 @@ const Layout = ({ children }) => {
                   <button className="text-sm text-gray-500" onClick={() => dispatch(fetchNotifications())}>Refresh</button>
                 </div>
                 <div className="max-h-64 overflow-auto">
-                  {notifications?.list?.length === 0 ? (
+                  {notifications?.loading ? (
+                    <div className="p-3 text-sm text-gray-500">Loading...</div>
+                  ) : notifications?.list?.length === 0 ? (
                     <div className="p-3 text-sm text-gray-500">No notifications</div>
                   ) : (
                     notifications.list.map((n) => (
@@ -403,7 +320,7 @@ const Layout = ({ children }) => {
           <div className="relative">
             {isLoggedIn ? (
               <button onClick={() => setShowUserMenu((s) => !s)} className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full">
-                <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-black">{(user?.name || user?.email || "U").charAt(0).toUpperCase()}</div>
+                <UserAvatar user={user} size={32} className="flex-shrink-0" />
                 <span className="hidden md:inline">{user?.name || (user?.email || "").split("@")[0]}</span>
               </button>
             ) : (

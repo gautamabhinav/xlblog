@@ -11,8 +11,10 @@ import Signup from "./Pages/Signup";
 
 import ForgetPassword from "./Pages/Password/ForgetPassword";
 import ResetPassword from "./Pages/Password/ResetPassword";
-import AdminDashboard from "./Pages/Dashboard/AdminDashboard";
+import AdminDashboard from "./Pages/Admin/AdminDashboard";
 import UserDashboard from "./Pages/Dashboard/UserDashboard";
+import UserDashboardFull from "./Pages/Dashboard/UserDashboardFull";
+import AdminDashboardFull from "./Pages/Dashboard/AdminDashboardFull";
 // import CourseDescription from "./Pages/Course/CourseDescription";
 
 import BlogDescription from "./Pages/Blog/BlogDescription";
@@ -22,6 +24,14 @@ import EditProfile from "./Pages/User/EditProfile";
 // import CreateCourse from "./Pages/Course/CreateCourse";
 
 import CreateBlog from "./Pages/Blog/CreateBlog"
+import TestList from "./Pages/Tests/TestList";
+import TestTake from "./Pages/Tests/TestTake";
+import TestResult from "./Pages/Tests/TestResult";
+import TestCreate from "./Pages/Tests/TestCreate";
+import TestUploadPDF from "./Pages/Tests/TestUploadPDF";
+import TestResultsAdmin from "./Pages/Tests/TestResultsAdmin";
+import MyAttempts from "./Pages/Tests/MyAttempts";
+import TestLeaderboard from "./Pages/Tests/TestLeaderboard";
 
 // import AddLecture from "./Pages/Dashboard/AddLecture";
 // import DisplayLectures from "./Pages/Dashboard/DisplayLectures";
@@ -72,11 +82,13 @@ const App = () => {
           <Route path="/user/profile" element={<Profile />} />
           <Route path="/user/editprofile" element={<EditProfile />} />
           <Route path="/user/dashboard" element={<UserDashboard />} />
+          <Route path="/user/dashboard-full" element={<UserDashboardFull />} />
           {/* <Route path="/course/displaylectures" element={<DisplayLectures />} /> */}
         </Route>
 
         <Route element={<RequireAuth allowedRoles={["ADMIN", "USER", "SUPERADMIN"]} />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard-full" element={<AdminDashboardFull />} />
 
           
           <Route path="/excel" element={<ExcelPage />} />
@@ -85,6 +97,23 @@ const App = () => {
 
           {/* <Route path="/course/addlecture" element={<AddLecture />} /> */}
           <Route path="/blog/create" element={<CreateBlog />} />
+          <Route path="/tests" element={<TestList />} />
+          <Route path="/tests/take/:id" element={<TestTake />} />
+          <Route path="/tests/result/:id" element={<TestResult />} />
+          {/* Admin create page - restrict to admins */}
+          <Route element={<RequireAuth allowedRoles={["ADMIN", "SUPERADMIN"]} />}>
+            <Route path="/tests/create" element={<TestCreate />} />
+            <Route path="/tests/upload-pdf" element={<TestUploadPDF />} />
+          </Route>
+
+          <Route element={<RequireAuth allowedRoles={["ADMIN", "SUPERADMIN", "USER"]} />}>
+            <Route path="/tests/attempts" element={<TestResultsAdmin />} />
+            <Route path="/tests/my-attempts" element={<MyAttempts />} />
+          </Route>
+
+          <Route path="/tests/:id/leaderboard" element={<TestLeaderboard />} />
+
+
           {/* <Route path="/blog/create" element={<CommentForm />} />
           <Route path="/blog/create" element={<CommentList />} /> */}
         </Route>
