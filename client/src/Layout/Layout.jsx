@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AiOutlineLogout, AiOutlineSearch } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "../Components/Footer";
+import UserAvatar from '../Components/Common/UserAvatar';
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../Redux/authSlice";
 import { BsMoon, BsSun } from "react-icons/bs";
@@ -93,9 +94,26 @@ const Layout = ({ children }) => {
   useEffect(() => {
     if (!socket) return;
     const onNew = (payload) => {
-      // refresh notifications list when a new notification arrives
-      dispatch(fetchNotifications());
-      try { toast.success("New notification"); } catch (e) { /* ignore */ }
+      // payload may include targeting info; ensure current user should see it
+      try {
+        const targetRoles = payload?.targetRoles || [];
+        const targetUsers = (payload?.targetUsers || []).map(String);
+        const shouldShow = (
+          (!targetRoles || targetRoles.length === 0) && (!targetUsers || targetUsers.length === 0)
+        ) || (role && targetRoles.includes(String(role).toUpperCase())) || (user && targetUsers.includes(String(user._id || user.id)));
+
+        if (shouldShow) {
+          // refresh notifications list when a new notification arrives
+          dispatch(fetchNotifications());
+          try { toast.success("New notification"); } catch (e) { /* ignore */ }
+        } else {
+          // silently ignore or optionally log for debugging
+          // console.debug('Notification received but not targeted to this user/role');
+        }
+      } catch (e) {
+        // safest behavior: refresh list if anything goes wrong
+        dispatch(fetchNotifications());
+      }
     };
     socket.on("newNotification", onNew);
     return () => {
@@ -113,6 +131,16 @@ const Layout = ({ children }) => {
       document.body.style.overflow = "";
     }
   }, [isOpen]);
+
+  // Close overlays (menu/user menu) on route change to avoid leftover full-screen backdrops
+  useEffect(() => {
+    setIsOpen(false);
+    setShowUserMenu(false);
+    setShowNotif(false);
+    // ensure body overflow is reset
+    document.body.style.overflow = "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const handleLogout = async (event) => {
     event.preventDefault();
@@ -152,15 +180,21 @@ const Layout = ({ children }) => {
         // },
       ]
     : []),
-  { name: "All Blogs", path: "/blogs", icon: <FiBook />, desc: "Explore all posts" },
-  // {
-  //         name: "Excel Manager",
-  //         path: "/excel",
-  //         icon: <FiFileText />, // or FiDatabase / FiUpload
-  //         desc: "Upload & manage Excel files",
-  //       },
 
-  // { name: "User Dashboard", path: "/user/dashboard", icon: <FiBook />, desc: "User Dashboard" },
+  { name: "All Blogs", path: "/blogs", icon: <FiBook />, desc: "Explore all posts" },
+  {
+          name: "Excel Manager",
+          path: "/excel",
+          icon: <FiFileText />, // or FiDatabase / FiUpload
+          desc: "Upload & manage Excel files",
+        },
+
+  // { name: "Test Take", path: "/tests/take", icon: <FiBook />, desc: "Take a test" },
+  // { name: "Test Result", path: "/tests/result", icon: <FiBook />, desc: "View test results" },
+  { name: "All Tests", path: "/tests", icon: <FiBook />, desc: "View tests" },
+  
+
+  { name: "User Dashboard", path: "/user/dashboard", icon: <FiBook />, desc: "User Dashboard" },
   { name: "Contact Us", path: "/contact", icon: <FiPhone />, desc: "Get in touch" },
   { name: "About Us", path: "/about", icon: <FiInfo />, desc: "Learn about the project" },
 ];
@@ -203,7 +237,7 @@ const Layout = ({ children }) => {
         </div>
 
         {/* search - visible on md+ */}
-        {/* <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-6">
+        <form onSubmit={submitSearch} className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-6">
           <div className="relative w-full">
             <AiOutlineSearch className="absolute left-3 top-3 text-gray-300" />
             <input
@@ -215,9 +249,27 @@ const Layout = ({ children }) => {
             />
           </div>
           <button type="submit" className="bg-yellow-400 text-black px-4 py-2 rounded-full font-semibold">Search</button>
-        </form> */}
+        </form>
 
         <div className="flex items-center gap-3">
+          {/* quick link to Tests - visible on md+ screens */}
+          <Link to="/tests" className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 hover:bg-white/20 transition text-white">
+            <FiBook />
+            <span className="hidden sm:inline">Tests</span>
+          </Link>
+
+          {/* admin quick-create test buttons */}
+          {isLoggedIn && (role === "ADMIN" || role === "SUPERADMIN") && (
+            <div className="hidden md:inline-flex items-center gap-2">
+              <Link to="/tests/create" className="items-center gap-2 px-3 py-1 rounded-md bg-yellow-400 text-black font-semibold hover:opacity-90 transition">
+                Create Test
+              </Link>
+              <Link to="/tests/upload-pdf" className="items-center gap-2 px-3 py-1 rounded-md bg-white/10 text-white font-semibold hover:opacity-90 transition">
+                Create Test (PDF)
+              </Link>
+            </div>
+          )}
+
           <button onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition" title="Toggle theme">
             {theme === "dark" ? <BsSun size={18} /> : <BsMoon size={18} />}
           </button>
@@ -238,7 +290,9 @@ const Layout = ({ children }) => {
                   <button className="text-sm text-gray-500" onClick={() => dispatch(fetchNotifications())}>Refresh</button>
                 </div>
                 <div className="max-h-64 overflow-auto">
-                  {notifications?.list?.length === 0 ? (
+                  {notifications?.loading ? (
+                    <div className="p-3 text-sm text-gray-500">Loading...</div>
+                  ) : notifications?.list?.length === 0 ? (
                     <div className="p-3 text-sm text-gray-500">No notifications</div>
                   ) : (
                     notifications.list.map((n) => (
@@ -266,7 +320,7 @@ const Layout = ({ children }) => {
           <div className="relative">
             {isLoggedIn ? (
               <button onClick={() => setShowUserMenu((s) => !s)} className="flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full">
-                <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-black">{(user?.name || user?.email || "U").charAt(0).toUpperCase()}</div>
+                <UserAvatar user={user} size={32} className="flex-shrink-0" />
                 <span className="hidden md:inline">{user?.name || (user?.email || "").split("@")[0]}</span>
               </button>
             ) : (

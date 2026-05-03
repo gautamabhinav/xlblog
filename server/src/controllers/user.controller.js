@@ -16,10 +16,11 @@ import AppError from '../utils/AppError.js';
 //   sameSite: 'None', // required for cross-site cookies
 // };
 
+const isProduction = process.env.NODE_ENV === 'production';
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production" ? "true" : "Lax", // true in production
-  sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  secure: isProduction, // true in production
+  sameSite: isProduction ? 'None' : 'Lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -181,11 +182,12 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 // });
 
 export const logoutUser = asyncHandler(async (_req, res, _next) => {
-  // Clear the cookie properly for cross-domain - jwt/token
-  res.cookie('jwt', null, {
-    secure: process.env.NODE_ENV === 'production', // true in production
+  // Clear the token cookie
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.cookie('token', null, {
+    secure: isProduction,
     httpOnly: true,
-    sameSite: 'None', // important for cross-domain cookies
+    sameSite: isProduction ? 'None' : 'Lax',
     maxAge: 0,
   });
 

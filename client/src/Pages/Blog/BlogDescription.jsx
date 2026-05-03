@@ -92,18 +92,18 @@ const BlogDescription = () => {
   }, [paramId, blog, location, loadBlog, navigate]);
 
   // ---------------- Actions ----------------
-  // const doLike = async () => {
-  //   if (!blog?._id) return;
-  //   try {
-  //     const res = await axiosInstance.post(`/likes/${blog._id}/like`);
-  //     if (res?.data) {
-  //       setLiked(true);
-  //       await loadBlog(blog._id);
-  //     }
-  //   } catch {
-  //     setLikesCount((c) => c + 1);
-  //   }
-  // };
+  const doLike = async () => {
+    if (!blog?._id) return;
+    try {
+      const res = await axiosInstance.post(`/likes/${blog._id}/like`);
+      if (res?.data) {
+        setLiked(true);
+        await loadBlog(blog._id);
+      }
+    } catch {
+      setLikesCount((c) => c + 1);
+    }
+  };
 
 
   const copyLink = async () => {
@@ -150,12 +150,12 @@ const BlogDescription = () => {
                 </span>
               </div>
 
-              {/* <div
+              <div
                 className="prose max-w-none text-zinc-200 mb-6"
                 dangerouslySetInnerHTML={{
                   __html: blog.content || blog?.description || "",
                 }}
-              /> */}
+              />
 
               <div className="prose max-w-none text-zinc-200 mb-6">
                 {blog.content || blog?.description || ""}
@@ -163,7 +163,7 @@ const BlogDescription = () => {
 
 
               <div className="flex items-center gap-3">
-                {/* <motion.button
+                <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={doLike}
                   className="flex items-center gap-2 px-3 py-2 rounded bg-white/5"
@@ -175,7 +175,7 @@ const BlogDescription = () => {
                   className="px-3 py-2 rounded bg-white/5 flex items-center gap-2"
                 >
                   <FiShare2 /> Share
-                </button> */}
+                </button>
 
 
                 <div className="flex items-center gap-3">

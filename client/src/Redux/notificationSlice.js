@@ -66,10 +66,7 @@ export const fetchNotifications = createAsyncThunk(
   'notifications/fetch',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await axiosInstance.get('/notifications',  {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true
-      });
+  const res = await axiosInstance.get('/notifications', { skipAuthRedirect: true });
       return res.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);
@@ -81,9 +78,7 @@ export const markNotificationRead = createAsyncThunk(
   'notifications/markRead',
   async (id, { rejectWithValue, getState }) => {
     try {
-      await axiosInstance.post(`/notifications/${id}/read`, {
-        withCredentials: true
-      });
+  await axiosInstance.post(`/notifications/${id}/read`, null, { skipAuthRedirect: true });
       const state = getState();
       const currentUserId =
         state?.auth?.data?._id ||
@@ -101,9 +96,7 @@ export const createNotification = createAsyncThunk(
   'notifications/create',
   async (payload, { rejectWithValue }) => {
     try {
-      const res = await axiosInstance.post('/notifications', payload, {
-        withCredentials: true
-      });
+  const res = await axiosInstance.post('/notifications', payload, { skipAuthRedirect: true });
       return res.data.notification;
     } catch (err) {
       return rejectWithValue(err.response?.data || err.message);

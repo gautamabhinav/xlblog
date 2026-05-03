@@ -20,7 +20,17 @@ export const createNotification = asyncHandler(async (req, res, next) => {
   // Broadcast to connected clients (simple): send event 'newNotification' with payload
   try {
     // emit a lightweight payload to avoid leaking internal data
-    io.emit('newNotification', { _id: n._id, title: n.title, message: n.message, createdAt: n.createdAt, type: n.type, link: n.link });
+    // include targeting info so clients can decide whether to show the toast
+    io.emit('newNotification', {
+      _id: n._id,
+      title: n.title,
+      message: n.message,
+      createdAt: n.createdAt,
+      type: n.type,
+      link: n.link,
+      targetRoles: n.targetRoles || [],
+      targetUsers: (n.targetUsers || []).map(String),
+    });
   } catch (e) {
     console.warn('Socket emit failed', e.message);
   }

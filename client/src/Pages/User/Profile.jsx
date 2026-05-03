@@ -144,6 +144,17 @@ const Profile = () => {
                   Edit Profile
                 </button>
 
+                {/* History / All Users Data button depending on role */}
+                {userData?.role === 'superadmin' ? (
+                  <button onClick={() => navigate('/admin/dashboard-full')} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-semibold">
+                    All Users Data
+                  </button>
+                ) : (
+                  <button onClick={() => navigate('/user/dashboard-full')} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-semibold">
+                    History
+                  </button>
+                )}
+
                 {userData?.subscription?.status === "active" && (
                   <button onClick={handleCancelSubscription} disabled={cancelling} className="flex-1 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-md font-semibold">
                     {cancelling ? "Cancelling..." : "Cancel Subscription"}

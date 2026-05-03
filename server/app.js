@@ -358,7 +358,10 @@ app.use(express.urlencoded({ extended: true }));
 // );
 
 
-
+if (process.env.NODE_ENV === "test") {
+  console.log = () => {};
+  console.warn = () => {};
+}
 
 
 app.set('trust proxy', 1);
@@ -367,6 +370,9 @@ const allowedOrigins = [
   "http://localhost:5173", // local frontend
   "https://xlblog-1.onrender.com", // your Render frontend
 ];
+
+// include FRONTEND_URL env if present
+if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
 
 app.use(
   cors({
@@ -428,6 +434,7 @@ app.get("/ping", (_req, res) => res.send("Pong"));
 // ---------------- API Routes ----------------
 import userRoutes from "./src/routes/user.routes.js";
 import adminRoutes from "./src/routes/admin.routes.js";
+import adminDynamicRoutes from './src/routes/admin.dynamic.routes.js';
 import blogRoutes from "./src/routes/blog.routes.js";
 import categoryRoutes from "./src/routes/category.routes.js";
 import blogLikeRoute from "./src/routes/like.routes.js";
@@ -437,10 +444,12 @@ import excelRoutes from "./src/routes/upload.routes.js";
 import summaryRoutes from "./src/routes/summary.routes.js";
 import commentRoutes from "./src/routes/comment.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
+import testRoutes from "./src/routes/test.routes.js";
 import session from "express-session";
 
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use('/api/v1/admin', adminDynamicRoutes);
 app.use("/api/v1/posts", blogRoutes);
 app.use("/api/v1/comment", commentRoutes);
 app.use("/api/v1/excel", excelRoutes);
@@ -450,6 +459,7 @@ app.use("/api/v1/contact", contactRoute);
 app.use("/api/v1/stats", statsRoute);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/likes", blogLikeRoute);
+app.use("/api/v1/tests", testRoutes);
 
 // ---------------- Frontend (Production) ----------------
 if (process.env.NODE_ENV === "production") {

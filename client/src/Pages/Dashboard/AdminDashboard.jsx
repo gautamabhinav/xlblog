@@ -366,37 +366,6 @@ import AiInsights from "../Excel/AiInsights";
 import ChartViewer from "../Excel/ChartViewer";
 import { getExcelFiles, uploadExcelFile, deleteExcelFile, getExcelFileById } from "../../Redux/excelSlice";
 import { saveAs } from "file-saver";
-import { getAllBlogs } from "../../Redux/blogSlice";
-import { MdOutlineModeEdit } from "react-icons/md";
-import { FcSalesPerformance, FcViewDetails } from "react-icons/fc";
-
-import {
-  BsCollectionPlayFill,
-  BsTrash,
-} from "react-icons/bs";
-
-import {
-  FaUsers,
-  // FaUserShield,
-  // FaCrown,
-  // FaRegUser,
-} from "react-icons/fa";
-
-// Reusable Stat Card
-const StatCard = ({ title, value, icon, color }) => {
-  return (
-    <motion.div
-      whileHover={{ y: -6 }}
-      className={`flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br ${color} text-black shadow-md`}
-    >
-      <div>
-        <p className="text-sm font-medium opacity-80">{title}</p>
-        <h2 className="text-3xl font-bold mt-1">{value}</h2>
-      </div>
-      <div className="text-4xl opacity-90">{icon}</div>
-    </motion.div>
-  );
-};
 
 const AdminDashboard = ({ id }) => {
   const dispatch = useDispatch();
@@ -404,43 +373,13 @@ const AdminDashboard = ({ id }) => {
 
   const { users = [], loading = false } = useSelector((state) => state.admin || {});
   const auth = useSelector((state) => state.auth || {});
-  const myBlogs = useSelector((state) => state.blog.blogsData) || [];
-  const [animated, setAnimated] = useState({ b: 0, a: 0, c: 0 })
-
-  const [counts, setCounts] = useState({ blogs: 0, authors: 0, categories: 0 });
   const { files = [], currentFile } = useSelector((state) => state.excel || {});
   const currentUserRole = auth?.role || "";
 
   useEffect(() => {
     dispatch(fetchUsers());
     dispatch(getExcelFiles()); // load list once on mount
-    dispatch(getAllBlogs())
   }, [dispatch]);
-
-  useEffect(() => {
-    const totalBlogs = myBlogs?.length || 0;
-    const uniqueAuthors = new Set(myBlogs.map((b) => b?.author).filter(Boolean)).size;
-    const uniqueCategories = new Set(myBlogs.map((b) => b?.category?.name).filter(Boolean)).size;
-
-    setCounts({ blogs: totalBlogs, authors: uniqueAuthors, categories: uniqueCategories });
-
-    // Simple count-up animation
-    const duration = 600;
-    const start = performance.now();
-    const startVals = { ...animated };
-
-    const step = (now) => {
-      const t = Math.min((now - start) / duration, 1);
-      setAnimated({
-        b: Math.floor(startVals.b + (totalBlogs - startVals.b) * t),
-        a: Math.floor(startVals.a + (uniqueAuthors - startVals.a) * t),
-        c: Math.floor(startVals.c + (uniqueCategories - startVals.c) * t),
-      });
-      if (t < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myBlogs]);
 
   // selected file id for embedded chart viewer / analysis
   const [selectedFileId, setSelectedFileId] = useState(id || null);
@@ -500,49 +439,23 @@ const AdminDashboard = ({ id }) => {
           {/* Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-yellow-400">Admin Dashboard</h1>
-            <div className="flex gap-3">
-              <button
-                onClick={() => dispatch(getAllBlogs())}
-                className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition"
-              >
-                Refresh
-              </button>
-              <button
-                onClick={() => navigate("/blog/create")}
-                className="px-4 py-2 rounded-lg bg-yellow-500 text-black font-semibold"
-              >
-                + Create Blog
-              </button>
+            <div className="flex items-center gap-3">
+              <label className="px-4 py-2 bg-indigo-600 rounded cursor-pointer hover:bg-indigo-700 transition">
+                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUploadFile} className="hidden" />
+                <span className="flex items-center gap-2"><FiUpload /> Upload Excel</span>
+              </label>
+              <button onClick={() => navigate('/tests')} className="px-3 py-2 rounded bg-indigo-500 text-white">Tests</button>
+              {(currentUserRole === 'ADMIN' || currentUserRole === 'SUPERADMIN') && (
+                <>
+                  <button onClick={() => navigate('/tests/upload-pdf')} className="px-3 py-2 rounded bg-pink-500 text-white">Upload Test PDF</button>
+                  <button onClick={() => navigate('/tests/create')} className="px-3 py-2 rounded bg-yellow-400 text-black">Create Test</button>
+                  <button onClick={() => navigate('/tests/attempts')} className="px-3 py-2 rounded bg-green-600 text-white">View Attempts</button>
+                </>
+              )}
+
+              
             </div>
-
-            <label className="px-4 py-2 bg-indigo-600 rounded cursor-pointer hover:bg-indigo-700 transition">
-              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUploadFile} className="hidden" />
-              <span className="flex items-center gap-2"><FiUpload /> Upload Excel</span>
-            </label>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <StatCard
-              title="Total Blogs"
-              value={animated.b}
-              icon={<BsCollectionPlayFill />}
-              color="from-yellow-300 to-yellow-500"
-            />
-            <StatCard
-              title="Unique Authors"
-              value={animated.a}
-              icon={<FaUsers />}
-              color="from-emerald-300 to-emerald-500"
-            />
-            <StatCard
-              title="Categories"
-              value={animated.c}
-              icon={<FcSalesPerformance />}
-              color="from-sky-300 to-sky-500"
-            />
-          </div>
-          
 
           {/* Users */}
           <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} className="bg-gradient-to-br from-white/5 to-white/10 p-6 rounded-2xl shadow-lg border border-zinc-800">
@@ -649,85 +562,6 @@ const AdminDashboard = ({ id }) => {
               <AiInsights parsedData={currentFile?.parsedData || currentFile?.data || null} />
             </div>
           </motion.div> */}
-
-          {/* Blogs Table */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-white/5 to-white/10 p-6 rounded-2xl shadow-lg border border-zinc-800"
-          >
-            <h2 className="text-lg font-semibold mb-4 text-yellow-400">
-              Blogs Overview
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-zinc-800/50">
-                  <tr>
-                    <th className="px-4 py-2">#</th>
-                    <th className="px-4 py-2">Preview</th>
-                    <th className="px-4 py-2">Title</th>
-                    <th className="px-4 py-2">Category</th>
-                    <th className="px-4 py-2">Author</th>
-                    <th className="px-4 py-2">Content</th>
-                    <th className="px-4 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myBlogs.map((blog, index) => (
-                    <motion.tr
-                      key={blog._id}
-                      initial={{ opacity: 0, y: 6 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      className="border-t border-zinc-700 hover:bg-white/5"
-                    >
-                      <td className="px-4 py-3">{index + 1}</td>
-                      <td className="px-4 py-3">
-                        {blog?.thumbnail?.secure_url ? (
-                          <img
-                            src={blog.thumbnail.secure_url}
-                            alt="thumb"
-                            className="w-20 h-12 object-cover rounded-lg border border-zinc-700"
-                          />
-                        ) : (
-                          <div className="w-20 h-12 flex items-center justify-center bg-zinc-800 text-zinc-500 rounded-lg">
-                            No Img
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">{blog.title}</td>
-                      <td className="px-4 py-3">{blog.category?.name || "—"}</td>
-                      <td className="px-4 py-3">{blog.author || "—"}</td>
-                      <td className="px-4 py-3 max-w-xs truncate">
-                        {blog.content}
-                      </td>
-                      <td className="px-4 py-3 flex gap-2">
-                        <button
-                          onClick={() =>
-                            navigate("/blog/create", { state: { initialBlogData: { newBlog: false, ...blog } } })
-                          }
-                          className="p-2 bg-yellow-500 hover:bg-yellow-600 rounded-lg text-black"
-                        >
-                          <MdOutlineModeEdit />
-                        </button>
-                        <button
-                          onClick={() => handleBlogDelete(blog._id)}
-                          className="p-2 bg-red-500 hover:bg-red-600 rounded-lg text-white"
-                        >
-                          <BsTrash />
-                        </button>
-                        <button
-                          onClick={() => navigate("/blog/description", { state: { ...blog } })}
-                          className="p-2 bg-green-500 hover:bg-green-600 rounded-lg text-black"
-                        >
-                          <FcViewDetails />
-                        </button>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </motion.div>
         </div>
       </div>
     </Layout>

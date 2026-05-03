@@ -144,7 +144,7 @@ const Homepage = () => {
 
             <div className="mt-6 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
               <div className="relative w-full sm:w-96">
-                <HiOutlineSearch className="absolute left-3 top-3 text-gray-400" />
+                {/* <HiOutlineSearch className="absolute left-3 top-3 text-gray-400" /> */}
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -152,14 +152,14 @@ const Homepage = () => {
                   className="pl-10 pr-3 py-2 w-full bg-zinc-800 rounded-md border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 />
                 {/* Voice search button (AI UX) */}
-                {/* <button
+                <button
                   type="button"
                   onClick={startVoiceSearch}
                   className={`absolute right-2 top-1/2 -translate-y-1/2 bg-yellow-500 hover:bg-yellow-600 text-black p-2 rounded-full ${isListening ? 'ring-2 ring-yellow-300' : ''}`}
                   title={isListening ? 'Listening...' : 'Voice search'}
                 >
                   {isListening ? '🎙️' : '🗣️'}
-                </button> */}
+                </button>
                 {/* Suggestions dropdown */}
                 {suggestions.length > 0 && (
                   <div className="absolute left-0 mt-12 w-full bg-zinc-900 border border-zinc-700 rounded shadow-lg z-20">
@@ -181,6 +181,11 @@ const Homepage = () => {
                     Explore Blogs
                   </button>
                 </Link>
+                {/** Show CSV/PDF test upload CTA for admins */}
+                {/* role is derived from redux in Layout; use a simple link for admins */}
+                <Link to="/tests/upload-pdf">
+                  <button className="bg-white/10 px-4 py-2 rounded-md font-semibold hover:bg-white/20 transition">Create Test (PDF)</button>
+                </Link>
               </div>
             </div>
 
@@ -193,10 +198,10 @@ const Homepage = () => {
                 <p className="text-2xl font-bold text-yellow-400">{Math.max(100, blogsData.length * 5)}</p>
                 <p className="text-gray-300">Readers (est.)</p>
               </div>
-              {/* <div>
+              <div>
                 <p className="text-2xl font-bold text-yellow-400">{excelFiles.length}</p>
                 <p className="text-gray-300">Excel files uploaded</p>
-              </div> */}
+              </div>
             </div>
           </motion.div>
 
@@ -304,7 +309,7 @@ const Homepage = () => {
         </section>
 
         {/* EXCEL & AI */}
-        {/* <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="col-span-1 md:col-span-2 bg-zinc-800 rounded-lg p-6">
             <h3 className="text-xl font-semibold mb-3">Excel Manager</h3>
             <p className="text-gray-300 mb-4">
@@ -318,7 +323,7 @@ const Homepage = () => {
             <h3 className="text-xl font-semibold mb-3">AI Insights</h3>
             <AiInsights parsedData={currentFile?.parsedData || null} />
           </div>
-        </section> */}
+        </section>
 
         {/* RECENT POSTS */}
         <section>
@@ -376,7 +381,7 @@ const Homepage = () => {
                   <button onClick={() => setAssistantOpen(false)} className="text-sm text-zinc-400">Close</button>
                 </div>
                 <div className="text-sm text-zinc-300 mb-2">Try: "Summarize latest posts" or "Show AI picks"</div>
-                {/* <div className="flex gap-2">
+                <div className="flex gap-2">
                   <button
                     onClick={() => { setQuery(''); setAssistantOpen(false); alert('Try voice search by clicking the mic!'); }}
                     className="flex-1 px-3 py-2 bg-yellow-500 rounded text-black text-sm"
@@ -389,17 +394,17 @@ const Homepage = () => {
                   >
                     AI Picks
                   </button>
-                </div> */}
+                </div>
               </div>
             )}
 
-            {/* <button
+            <button
               onClick={() => setAssistantOpen((s) => !s)}
               className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-white shadow-lg flex items-center justify-center text-xl"
               title="Open Assistant"
             >
               🤖
-            </button> */}
+            </button>
           </div>
         </div>
       </div>

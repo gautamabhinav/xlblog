@@ -60,13 +60,11 @@ export const isLoggedIn = asyncHandler(async (req, _res, next) => {
 // Middleware to check if user is admin or not
 export const authorizeRoles = (...roles) =>
   asyncHandler(async (req, _res, next) => {
-    if (req.user.role === "SUPERADMIN") {
-      return next();
-    }
-    if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError("You do not have permission to view this route", 403)
-      );
+    const userRole = String(req.user.role || '').toUpperCase();
+    const allowed = (roles || []).map(r => String(r || '').toUpperCase());
+    if (userRole === 'SUPERADMIN') return next();
+    if (!allowed.includes(userRole)) {
+      return next(new AppError('You do not have permission to view this route', 403));
     }
 
     next();
@@ -91,14 +89,15 @@ export const authorizeSubscribers = asyncHandler(async (req, _res, next) => {
 
 // middleware/auth.js
 export const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'ADMIN' && req.user.role !== 'SUPERADMIN') {
+  const r = String(req.user.role || '').toUpperCase();
+  if (r !== 'ADMIN' && r !== 'SUPERADMIN') {
     return res.status(403).json({ message: 'Access denied' });
   }
   next();
 };
 
 export const requireSuperAdmin = (req, res, next) => {
-  if (req.user.role !== 'SUPERADMIN') {
+  if (String(req.user.role || '').toUpperCase() !== 'SUPERADMIN') {
     return res.status(403).json({ message: 'Access denied' });
   }
   next();
@@ -106,10 +105,9 @@ export const requireSuperAdmin = (req, res, next) => {
 
 // middleware/auth.js
 export const isAdminOrSuperAdmin = (req, res, next) => {
-  if (req.user.role === "ADMIN" || req.user.role === "SUPERADMIN") {
-    return next();
-  }
-  return res.status(403).json({ message: "Not authorized" });
+  const r = String(req.user.role || '').toUpperCase();
+  if (r === 'ADMIN' || r === 'SUPERADMIN') return next();
+  return res.status(403).json({ message: 'Not authorized' });
 };
 
 

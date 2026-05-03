@@ -170,73 +170,90 @@
 
 /////////////////////////////////////////////////////////////////////////////////////////////
 
-import path from "path";
-import fs from "fs";
-import multer from "multer";
+// import path from "path";
+// import fs from "fs";
+// import multer from "multer";
 
-const diskStorage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (_req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`); // unique filename
-  },
-});
+// const diskStorage = multer.diskStorage({
+//   destination: "uploads/",
+//   filename: (_req, file, cb) => {
+//     cb(null, `${Date.now()}-${file.originalname}`); // unique filename
+//   },
+// });
+
+// const upload = multer({
+//   storage: {
+//     _handleFile(req, file, cb) {
+//       const ext = path.extname(file.originalname).toLowerCase();
+
+//       // 👉 Store Excel/CSV/PDF in memory
+//       if ([".xlsx", ".xls", ".xlsm", ".csv", ".pdf"].includes(ext)) {
+//         const chunks = [];
+//         file.stream.on("data", (chunk) => chunks.push(chunk));
+//         file.stream.on("end", () => {
+//           const buffer = Buffer.concat(chunks);
+//           cb(null, {
+//             buffer,
+//             size: buffer.length,
+//             originalname: file.originalname,
+//             mimetype: file.mimetype,
+//           });
+//         });
+//       } else {
+//         // 👉 Use diskStorage for everything else
+//         diskStorage._handleFile(req, file, cb);
+//       }
+//     },
+
+//     _removeFile(_req, file, cb) {
+//       if (file.path) {
+//         fs.unlink(file.path, cb);
+//       } else {
+//         cb(null);
+//       }
+//     },
+//   },
+//   limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+//   fileFilter: (_req, file, cb) => {
+//     const ext = path.extname(file.originalname).toLowerCase();
+//     if (
+//       ![
+//         ".jpg",
+//         ".jpeg",
+//         ".webp",
+//         ".png",
+//         ".mp4",
+//         ".xlsx",
+//         ".xls",
+//         ".xlsm",
+//         ".csv",
+//         ".pdf",
+//       ].includes(ext)
+//     ) {
+//       return cb(new Error(`Unsupported file type! ${ext}`), false);
+//     }
+//     cb(null, true);
+//   },
+// });
+
+// export default upload;
+
+
+
+import multer from 'multer';
 
 const upload = multer({
-  storage: {
-    _handleFile(req, file, cb) {
-      const ext = path.extname(file.originalname).toLowerCase();
-
-      // 👉 Store Excel/CSV in memory
-      if ([".xlsx", ".xls", ".xlsm", ".csv"].includes(ext)) {
-        const chunks = [];
-        file.stream.on("data", (chunk) => chunks.push(chunk));
-        file.stream.on("end", () => {
-          const buffer = Buffer.concat(chunks);
-          cb(null, {
-            buffer,
-            size: buffer.length,
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-          });
-        });
-      } else {
-        // 👉 Use diskStorage for everything else
-        diskStorage._handleFile(req, file, cb);
-      }
-    },
-
-    _removeFile(_req, file, cb) {
-      if (file.path) {
-        fs.unlink(file.path, cb);
-      } else {
-        cb(null);
-      }
-    },
-  },
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+  storage: multer.memoryStorage(), // ✅ always gives buffer
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (
-      ![
-        ".jpg",
-        ".jpeg",
-        ".webp",
-        ".png",
-        ".mp4",
-        ".xlsx",
-        ".xls",
-        ".xlsm",
-        ".csv",
-      ].includes(ext)
-    ) {
-      return cb(new Error(`Unsupported file type! ${ext}`), false);
+    if (file.mimetype !== 'application/pdf') {
+      return cb(new Error('Only PDF files allowed'), false);
     }
     cb(null, true);
   },
 });
 
 export default upload;
-
 
 
 // import path from "path";

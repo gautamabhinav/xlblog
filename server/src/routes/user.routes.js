@@ -11,6 +11,7 @@ import {
   updateUserRole,
 } from "../controllers/user.controller.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
+import { getUserDashboard } from '../controllers/userDashboard.controller.js';
 import upload from "../middlewares/multer.middleware.js";
 import {  ipLimiter } from "../middlewares/rateLimiter.middleware.js";
 
@@ -37,6 +38,8 @@ router.post("/reset/:resetToken", ipLimiter, resetPassword);
 
 router.post("/logout", ipLimiter, logoutUser);
 router.get("/me", ipLimiter, isLoggedIn, getLoggedInUserDetails);
+// consolidated user dashboard
+router.get('/dashboard', ipLimiter, isLoggedIn, getUserDashboard);
 router.post("/change-password", ipLimiter, isLoggedIn, changePassword);
 // router.put("/update/:id", isLoggedIn, upload.single("avatar"), updateUser);
 router.put("/update/:id", ipLimiter, isLoggedIn, upload.single("avatar"), // <-- multer parses FormData
