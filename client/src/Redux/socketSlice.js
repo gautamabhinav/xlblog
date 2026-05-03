@@ -101,8 +101,16 @@ export const connectSocket = () => (dispatch, getState) => {
       withCredentials: true,
       transports: ["websocket", "polling"],
       autoConnect: false,
+      auth: {
+        token: localStorage.getItem("token") || undefined,
+      },
     });
   }
+
+  socket.auth = {
+    ...socket.auth,
+    token: localStorage.getItem("token") || undefined,
+  };
 
   if (!socket.hasListeners) {
     socket.on("connect", () => {

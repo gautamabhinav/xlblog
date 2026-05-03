@@ -63,6 +63,17 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token && !config.headers?.Authorization) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 // Global response interceptor: handle unauthorized and forbidden centrally
 api.interceptors.response.use(
   (res) => res,
@@ -74,6 +85,10 @@ api.interceptors.response.use(
       if (cfg.skipAuthRedirect) return Promise.reject(err);
 
       if (status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("data");
+        localStorage.removeItem("role");
+        localStorage.removeItem("isLoggedIn");
         // clear auth state then redirect to login
         try {
           // dynamic import to avoid circular dependency between store <-> axiosInstance <-> authSlice

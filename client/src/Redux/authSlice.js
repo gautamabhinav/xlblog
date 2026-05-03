@@ -281,6 +281,7 @@ const initialState = {
   isLoggedIn: localStorage.getItem("isLoggedIn") === "true",
   role: localStorage.getItem("role") || "",
   data: storedData && storedData !== "undefined" ? JSON.parse(storedData) : {},
+  token: localStorage.getItem("token") || "",
   loading: false,
   error: null,
 };
@@ -331,9 +332,7 @@ export const logout = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      let res = await axiosInstance.post("/user/logout", {
-        withCredentials : true
-      });
+      let res = await axiosInstance.post("/user/logout");
       toast.success(res?.data?.message || "Logged out successfully");
       return res.data;
     } catch (err) {
@@ -473,6 +472,22 @@ const authSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // Signup
+      .addCase(createAccount.fulfilled, (state, action) => {
+        if (action.payload?.user) {
+          state.loading = false;
+          state.isLoggedIn = true;
+          state.data = action.payload.user;
+          state.role = action.payload.user.role;
+          state.token = action.payload.token || "";
+
+          localStorage.setItem("data", JSON.stringify(action.payload.user));
+          localStorage.setItem("isLoggedIn", true);
+          localStorage.setItem("role", action.payload.user.role);
+          if (action.payload.token) localStorage.setItem("token", action.payload.token);
+        }
+      })
+
       // Login
       .addCase(login.pending, (state) => {
         state.loading = true;
@@ -483,11 +498,13 @@ const authSlice = createSlice({
         state.isLoggedIn = true;
         state.data = action.payload.user;
         state.role = action.payload.user.role;
+        state.token = action.payload.token || "";
 
         // Save to localStorage
         localStorage.setItem("data", JSON.stringify(action.payload.user));
         localStorage.setItem("isLoggedIn", true);
         localStorage.setItem("role", action.payload.user.role);
+        if (action.payload.token) localStorage.setItem("token", action.payload.token);
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
@@ -499,9 +516,11 @@ const authSlice = createSlice({
         state.isLoggedIn = false;
         state.data = {};
         state.role = "";
+        state.token = "";
         localStorage.removeItem("data");
         localStorage.removeItem("role");
         localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("token");
       })
 
       // Fetch current user

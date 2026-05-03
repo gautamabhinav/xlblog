@@ -20,7 +20,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const cookieOptions = {
   httpOnly: true,
   secure: isProduction, // true in production
-  sameSite: isProduction ? 'None' : 'Lax',
+  sameSite: isProduction ? 'none' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
@@ -116,6 +116,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   res.status(201).json({
     success: true,
     message: 'User registered successfully',
+    token,
     user,
   });
 });
@@ -157,6 +158,7 @@ export const loginUser = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: 'User logged in successfully',
+    token,
     user,
   });
 });
@@ -187,7 +189,7 @@ export const logoutUser = asyncHandler(async (_req, res, _next) => {
   res.cookie('token', null, {
     secure: isProduction,
     httpOnly: true,
-    sameSite: isProduction ? 'None' : 'Lax',
+    sameSite: isProduction ? 'none' : 'lax',
     maxAge: 0,
   });
 
