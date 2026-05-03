@@ -9,6 +9,39 @@ import User from '../models/user.model.js';
 import sendEmail from '../utils/sendEmail.js';
 import AppError from '../utils/AppError.js';
 
+const isCloudinaryConfigured = () =>
+  Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+  );
+
+const resolveAvatarUpload = async (file) => {
+  if (!file) return null;
+
+  if (!isCloudinaryConfigured()) {
+    return {
+      public_id: file.filename,
+      secure_url: file.fileUrl,
+    };
+  }
+
+  const result = await cloudinary.v2.uploader.upload(file.path, {
+    folder: 'blog',
+    width: 250,
+    height: 250,
+    gravity: 'faces',
+    crop: 'fill',
+  });
+
+  await fs.rm(file.path, { force: true });
+
+  return {
+    public_id: result.public_id,
+    secure_url: result.secure_url,
+  };
+};
+
 // const cookieOptions = {
 //   secure: process.env.NODE_ENV === 'production' ? true : false,
 //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -76,24 +109,9 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   // Run only if user sends a file
   if (req.file) {
     try {
-      const result = await cloudinary.v2.uploader.upload(req.file.path, {
-        folder: 'blog', // Save files in a folder named blog
-        width: 250,
-        height: 250,
-        gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
-        crop: 'fill',
-      });
-
-      // If success
-      if (result) {
-        // Set the public_id and secure_url in DB
-        user.avatar.public_id = result.public_id;
-        user.avatar.secure_url = result.secure_url;
-
-        // After successful upload remove the file from local storage
-        fs.rm(`uploads/${req.file.filename}`);
-      }
+      user.avatar = await resolveAvatarUpload(req.file);
     } catch (error) {
+      await fs.rm(req.file.path, { force: true });
       return next(
         new AppError(error || 'File not uploaded, please try again', 400)
       );
@@ -526,24 +544,11 @@ export const updateUser = asyncHandler(async (req, res, next) => {
   if (userRole) user.role = userRole;
 
   if (req.file) {
-    if (user.avatar?.public_id) {
+    if (isCloudinaryConfigured() && user.avatar?.public_id) {
       await cloudinary.v2.uploader.destroy(user.avatar.public_id);
     }
 
-    const result = await cloudinary.v2.uploader.upload(req.file.path, {
-      folder: "blog",
-      width: 250,
-      height: 250,
-      gravity: "faces",
-      crop: "fill",
-    });
-
-    user.avatar = {
-      public_id: result.public_id,
-      secure_url: result.secure_url,
-    };
-
-    await fs.rm(`uploads/${req.file.filename}`);
+    user.avatar = await resolveAvatarUpload(req.file);
   }
 
   await user.save();

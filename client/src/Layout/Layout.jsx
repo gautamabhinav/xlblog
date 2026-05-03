@@ -232,7 +232,7 @@ const Layout = ({ children }) => {
           </button>
 
           <Link to="/" className="text-lg font-bold tracking-wide hover:opacity-90">
-            Blogging Platform
+            Test Platform
           </Link>
         </div>
 

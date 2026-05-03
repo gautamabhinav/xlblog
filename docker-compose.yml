@@ -1,0 +1,32 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  server:
+    build: ./server
+    ports:
+      - "10000:10000"
+    environment:
+      NODE_ENV: production
+      PORT: 10000
+      MONGO_URI: mongodb://mongo:27017/xlblog
+      JWT_SECRET: change-me
+      JWT_EXPIRY: 7d
+      FRONTEND_URL: http://localhost:8080
+      PUBLIC_API_URL: http://localhost:10000
+    depends_on:
+      - mongo
+
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
+
+volumes:
+  mongo-data:

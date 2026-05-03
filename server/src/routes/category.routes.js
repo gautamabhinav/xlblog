@@ -6,7 +6,7 @@ import { Router } from "express";
 // import { addCategory, deleteCategory, getAllCategory, showCategory, updateCategory } from "../controllers/category.container.js";
 import { getAllCategory, addCategory, updateCategory,deleteCategory, showCategory } from "../controllers/category.controller.js";
 import { isLoggedIn } from "../middlewares/auth.middleware.js";
-import upload from "../middlewares/multer.middleware.js";
+import { uploadSingle } from "../middlewares/multer.middleware.js";
 import { ipLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 // const CategoryRoute = express.Router()
@@ -25,12 +25,12 @@ const router = Router();
 router
     .route('/')
         .get(ipLimiter , getAllCategory)
-        .post(ipLimiter, upload.single('thumbnail'), addCategory);
+        .post(ipLimiter, uploadSingle('thumbnail', ['image']), addCategory);
 
 router
     .route('/:categoryid')
         .get(ipLimiter, isLoggedIn, showCategory)
-        .put(ipLimiter, isLoggedIn, upload.single('thumbnail'), updateCategory)
+        .put(ipLimiter, isLoggedIn, uploadSingle('thumbnail', ['image']), updateCategory)
         .delete(ipLimiter, isLoggedIn, deleteCategory);
 
 export default router;

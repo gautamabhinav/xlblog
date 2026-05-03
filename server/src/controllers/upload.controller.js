@@ -200,6 +200,9 @@ export const uploadExcel = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: "Excel file uploaded successfully",
+    fileUrl: file.fileUrl,
+    fileType: file.fileType,
+    originalName: file.originalname,
     file: excelFile,
   });
 

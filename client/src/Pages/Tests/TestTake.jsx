@@ -1,155 +1,214 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '../../Layout/Layout';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchTest, submitAttempt } from '../../Redux/testSlice';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
 
-export default function TestTake(){
+import Layout from "../../Layout/Layout";
+import { fetchTest, submitAttempt } from "../../Redux/testSlice";
+
+const formatTime = (seconds) =>
+  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
+export default function TestTake() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const test = useSelector((state) => state.tests.current);
+  const loading = useSelector((state) => state.tests.loading.current);
 
-  const test = useSelector((s) => s.tests.current);
-  const loading = useSelector((s) => s.tests.loading.current);
-  const auth = useSelector((s) => s.auth || {});
-
-  const [answers, setAnswers] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const timerRef = useRef();
-  const [existingAttempt, setExistingAttempt] = useState(null);
+  const [answers, setAnswers] = useState({});
+  const [marked, setMarked] = useState({});
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [violations, setViolations] = useState({ tabSwitches: 0, fullscreenExits: 0, autoSubmitted: false });
+  const questionStartedAt = useRef(Date.now());
+  const timeSpent = useRef({});
+  const submitted = useRef(false);
 
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(fetchTest(id));
-  },[dispatch, id]);
+  }, [dispatch, id]);
 
-  // fetch if current user has attempts for this test
-  useEffect(()=>{
-    let mounted = true;
-    async function check() {
-      try{
-        const res = await fetch(`/api/v1/tests/attempts/me?testId=${id}`, { credentials: 'include' });
-        if (!mounted) return;
-        if (res.ok) {
-          const data = await res.json();
-          const arr = data.attempts || [];
-          if (arr.length>0) setExistingAttempt(arr[0]);
+  useEffect(() => {
+    if (test) setTimeLeft(test.durationSeconds || 300);
+  }, [test]);
+
+  const persistQuestionTime = () => {
+    const questionId = test?.questions?.[currentIndex]?._id;
+    if (!questionId) return;
+    const elapsed = Math.max(0, Math.round((Date.now() - questionStartedAt.current) / 1000));
+    timeSpent.current[questionId] = (timeSpent.current[questionId] || 0) + elapsed;
+    questionStartedAt.current = Date.now();
+  };
+
+  const goTo = (index) => {
+    persistQuestionTime();
+    setCurrentIndex(Math.max(0, Math.min(test.questions.length - 1, index)));
+  };
+
+  const buildPayload = (autoSubmitted = false) => {
+    persistQuestionTime();
+    return {
+      testId: id,
+      durationSeconds: Math.max(0, (test?.durationSeconds || 0) - timeLeft),
+      violations: { ...violations, autoSubmitted },
+      answers: (test?.questions || []).map((question) => ({
+        questionId: question._id,
+        selectedOptionIndexes: answers[question._id] || [],
+        selectedOptionIndex: answers[question._id]?.[0],
+        markedForReview: Boolean(marked[question._id]),
+        timeSpentSeconds: timeSpent.current[question._id] || 0,
+      })),
+    };
+  };
+
+  const handleSubmit = async (autoSubmitted = false) => {
+    if (submitted.current || !test) return;
+    submitted.current = true;
+    const payload = buildPayload(autoSubmitted);
+    const response = await dispatch(submitAttempt({ id, payload })).unwrap();
+    navigate(`/tests/result/${response.attempt?._id}`, {
+      state: { analysis: response.analysis, attempt: response.attempt },
+    });
+  };
+
+  useEffect(() => {
+    if (!timeLeft || !test) return undefined;
+    const timer = setInterval(() => {
+      setTimeLeft((value) => {
+        if (value <= 1) {
+          clearInterval(timer);
+          handleSubmit(true);
+          return 0;
         }
-      }catch(e){ console.error(e); }
-    }
-    check();
-    return ()=> { mounted = false }
-  },[id]);
+        return value - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft, test]);
 
-  useEffect(()=>{
-    if(test) setTimeLeft(test.durationSeconds || 300);
-  },[test]);
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        setViolations((prev) => {
+          const next = { ...prev, tabSwitches: prev.tabSwitches + 1 };
+          const limit = test?.pattern?.antiCheat?.maxTabSwitches ?? 3;
+          if (test?.pattern?.antiCheat?.autoSubmitOnViolation && next.tabSwitches > limit) {
+            setTimeout(() => handleSubmit(true), 0);
+          }
+          return next;
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [test, violations]);
 
-  useEffect(()=>{
-    if(!timeLeft) return;
-    timerRef.current = setInterval(()=>{
-      setTimeLeft(t=>{
-        if(t<=1){ clearInterval(timerRef.current); handleSubmit(); return 0 }
-        return t-1;
-      })
-    },1000);
-    return ()=> clearInterval(timerRef.current);
-  },[timeLeft]);
+  const currentQuestion = test?.questions?.[currentIndex];
+  const selected = answers[currentQuestion?._id] || [];
+  const answeredCount = useMemo(
+    () => Object.values(answers).filter((value) => value.length).length,
+    [answers]
+  );
 
-  const selectOption = (qId, idx)=>{
-    setAnswers(prev=>{
-      const others = prev.filter(a=>String(a.questionId)!==String(qId));
-      return [...others, { questionId: qId, selectedOptionIndex: idx }];
-    })
-  }
+  const toggleOption = (optionIndex) => {
+    const questionId = currentQuestion._id;
+    setAnswers((prev) => {
+      const current = prev[questionId] || [];
+      const multi = currentQuestion.options.length === 5;
+      const next = multi
+        ? current.includes(optionIndex)
+          ? current.filter((idx) => idx !== optionIndex)
+          : [...current, optionIndex]
+        : [optionIndex];
+      return { ...prev, [questionId]: next };
+    });
+  };
 
-  const handleSubmit = async ()=>{
-    try{
-      const payload = { testId: id, answers, durationSeconds: (test?.durationSeconds - timeLeft) };
-      const res = await dispatch(submitAttempt({ id, payload })).unwrap();
-      const attemptId = res.attempt?._id || res.attemptId || (res.attempt && res.attempt._id);
-      navigate(`/tests/result/${attemptId}`, { state: { analysis: res.analysis } });
-    }catch(err){ console.error(err); }
-  }
-
-  if(loading || !test) return <div className="p-6">Loading test...</div>
-
-  const q = test.questions[currentIndex];
-  const selectedForQ = answers.find(a=>String(a.questionId)===String(q._id))?.selectedOptionIndex;
+  if (loading || !test) return <div className="p-6">Loading exam...</div>;
 
   return (
     <Layout>
-      <div className="p-6 max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* If user already took this test show banner */}
-        {existingAttempt && (
-          <div className="lg:col-span-3 mb-4">
-            <div className="p-4 bg-yellow-100 rounded border-l-4 border-yellow-400 flex items-center justify-between">
-              <div>
-                <div className="font-semibold">You have already taken this test.</div>
-                <div className="text-sm text-gray-700">Score: {existingAttempt.score} / {existingAttempt.maxScore} • Taken at: {new Date(existingAttempt.createdAt).toLocaleString()}</div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={()=> navigate(`/tests/result/${existingAttempt._id}`)} className="px-3 py-2 rounded bg-indigo-600 text-white">View Result</button>
-                <button onClick={()=>{ setExistingAttempt(null); setAnswers([]); setTimeLeft(test.durationSeconds || 300); }} className="px-3 py-2 rounded bg-green-600 text-white">Retake</button>
-              </div>
+      <div className="grid gap-6 p-6 lg:grid-cols-[1fr_320px]">
+        <main className="rounded-lg bg-white p-6 shadow">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-bold">{test.title}</h1>
+              <p className="text-sm text-gray-500">
+                Q{currentIndex + 1}/{test.questions.length} · Marks {currentQuestion.marks || test.marksPerQuestion || 1}
+              </p>
             </div>
-          </div>
-        )}
-        {/* Main */}
-        <div className="lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold">{test.title}</h2>
-            <div className="text-sm text-gray-600">Time left: {Math.floor(timeLeft/60)}:{String(timeLeft%60).padStart(2,'0')}</div>
+            <div className="rounded bg-gray-900 px-4 py-2 font-mono text-lg text-white">{formatTime(timeLeft)}</div>
           </div>
 
-          <div className="bg-white p-6 rounded shadow">
-            <div className="text-lg font-medium mb-3">Question {currentIndex+1} of {test.questions.length}</div>
-            <div className="mb-4 text-gray-800">{q.text}</div>
-            <div className="grid gap-3">
-              {q.options.map((opt, oi)=> (
-                <button key={oi} onClick={()=>selectOption(q._id, oi)} className={`text-left p-3 rounded border ${selectedForQ===oi? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white hover:bg-gray-100'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${selectedForQ===oi? 'bg-white text-indigo-600':'text-gray-600'}`}>
-                      {String.fromCharCode(65+oi)}
-                    </div>
-                    <div>{opt.text}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className="mb-5 text-lg font-medium">{currentQuestion.text}</div>
 
-            <div className="mt-6 flex items-center justify-between">
-              <div className="flex gap-2">
-                <button onClick={()=>setCurrentIndex(i=>Math.max(0,i-1))} className="px-3 py-2 rounded border">Previous</button>
-                <button onClick={()=>setCurrentIndex(i=>Math.min(test.questions.length-1,i+1))} className="px-3 py-2 rounded border">Next</button>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleSubmit} className="px-4 py-2 rounded bg-green-600 text-white">Submit Test</button>
-              </div>
-            </div>
+          <div className="space-y-3">
+            {currentQuestion.options.map((option, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => toggleOption(index)}
+                className={`flex w-full items-center gap-3 rounded border p-3 text-left transition ${
+                  selected.includes(index) ? "border-indigo-600 bg-indigo-50" : "hover:bg-gray-50"
+                }`}
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 font-semibold">
+                  {String.fromCharCode(65 + index)}
+                </span>
+                {option.text}
+              </button>
+            ))}
           </div>
-        </div>
 
-        {/* Sidebar */}
+          <div className="mt-6 flex flex-wrap justify-between gap-3">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => goTo(currentIndex - 1)} className="rounded border px-4 py-2">Previous</button>
+              <button type="button" onClick={() => goTo(currentIndex + 1)} className="rounded border px-4 py-2">Save & Next</button>
+              <button type="button" onClick={() => setMarked((prev) => ({ ...prev, [currentQuestion._id]: !prev[currentQuestion._id] }))} className="rounded bg-purple-100 px-4 py-2 text-purple-700">
+                {marked[currentQuestion._id] ? "Unmark" : "Mark for Review"}
+              </button>
+            </div>
+            <button type="button" onClick={() => window.confirm("Submit exam now?") && handleSubmit(false)} className="rounded bg-green-600 px-5 py-2 font-semibold text-white">
+              Submit
+            </button>
+          </div>
+        </main>
+
         <aside className="space-y-4">
-          <div className="p-4 bg-white rounded shadow text-center">
+          <div className="rounded-lg bg-white p-4 shadow">
             <div className="text-sm text-gray-500">Progress</div>
-            <div className="mt-2 font-semibold">{answers.length} answered / {test.questions.length}</div>
-            <div className="w-full h-3 bg-gray-200 rounded mt-3 overflow-hidden">
-              <div className="h-full bg-indigo-600" style={{ width: `${(answers.length/test.questions.length)*100}%` }} />
-            </div>
+            <div className="mt-2 text-xl font-semibold">{answeredCount}/{test.questions.length}</div>
+            <div className="mt-3 text-xs text-red-600">Tab switches: {violations.tabSwitches}</div>
           </div>
-
-          <div className="p-4 bg-white rounded shadow">
-            <div className="text-sm text-gray-500">Jump to question</div>
-            <div className="mt-3 grid grid-cols-6 gap-2">
-              {test.questions.map((qq, i) => (
-                <button key={qq._id} onClick={()=>setCurrentIndex(i)} className={`p-2 rounded ${answers.find(a=>String(a.questionId)===String(qq._id))? 'bg-green-100':'bg-gray-100'}`}>{i+1}</button>
-              ))}
+          <div className="rounded-lg bg-white p-4 shadow">
+            <div className="mb-3 text-sm font-medium">Question Navigator</div>
+            <div className="grid grid-cols-5 gap-2">
+              {test.questions.map((question, index) => {
+                const isAnswered = answers[question._id]?.length;
+                const isMarked = marked[question._id];
+                return (
+                  <button
+                    key={question._id}
+                    type="button"
+                    onClick={() => goTo(index)}
+                    className={`rounded p-2 text-sm ${
+                      index === currentIndex
+                        ? "bg-indigo-600 text-white"
+                        : isMarked
+                        ? "bg-purple-100 text-purple-700"
+                        : isAnswered
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100"
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </aside>
       </div>
     </Layout>
-  )
+  );
 }

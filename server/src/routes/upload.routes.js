@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authorizeRoles, isLoggedIn } from "../middlewares/auth.middleware.js";
-import upload from "../middlewares/multer.middleware.js";
+import { uploadSingle } from "../middlewares/multer.middleware.js";
 import {
   getAllExcelFiles,
   getExcelFileById,
@@ -16,7 +16,7 @@ const router = Router();
 router
   .route("/")
   .get(ipLimiter, getAllExcelFiles) // anyone can fetch metadata
-  .post(ipLimiter, isLoggedIn, authorizeRoles("USER","ADMIN", "SUPERADMIN"), upload.single("excel"), uploadExcel);
+  .post(ipLimiter, isLoggedIn, authorizeRoles("USER","ADMIN", "SUPERADMIN"), uploadSingle("excel", ["excel"]), uploadExcel);
 
 router
   .route("/:id")

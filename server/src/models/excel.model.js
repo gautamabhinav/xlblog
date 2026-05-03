@@ -66,7 +66,13 @@ const excelFileSchema = new Schema(
     },
     contentType: {
       type: String,
-      enum: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"],
+      enum: [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-excel",
+        "application/vnd.ms-excel.sheet.macroEnabled.12",
+        "text/csv",
+        "application/csv",
+      ],
       required: true,
     },
     size: {

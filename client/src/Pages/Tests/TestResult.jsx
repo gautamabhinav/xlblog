@@ -3,6 +3,7 @@ import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../Layout/Layout';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchAttempt } from '../../Redux/testSlice';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 export default function TestResult() {
   const { id } = useParams();
@@ -91,6 +92,11 @@ export default function TestResult() {
       maxScore,
       percent,
       perQuestion,
+      topicWise: attemptObj?.analytics?.topicWise || [],
+      difficultyWise: attemptObj?.analytics?.difficultyWise || [],
+      heatmap: attemptObj?.analytics?.heatmap || [],
+      weakAreas: attemptObj?.analytics?.weakAreas || [],
+      strongAreas: attemptObj?.analytics?.strongAreas || [],
       wrong: (perQuestion || []).filter((p) => p.got === 0),
     };
   }, [analysis, attemptObj]);
@@ -222,6 +228,42 @@ export default function TestResult() {
                     {(data.perQuestion?.length || 0) - correctCount} wrong
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded shadow mb-6">
+              <h3 className="font-semibold mb-3">Topic-wise Performance</h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={data.topicWise || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="accuracy" fill="#4f46e5" name="Accuracy %" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded shadow mb-6">
+              <h3 className="font-semibold mb-3">Attempt Heatmap</h3>
+              <div className="grid grid-cols-10 gap-2">
+                {(data.heatmap || []).map((item) => (
+                  <div
+                    key={item.questionNumber}
+                    title={`Q${item.questionNumber}: ${item.status}, ${item.timeSpentSeconds}s`}
+                    className={`rounded p-2 text-center text-xs ${
+                      item.status === 'CORRECT'
+                        ? 'bg-green-100 text-green-700'
+                        : item.status === 'WRONG'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {item.questionNumber}
+                  </div>
+                ))}
               </div>
             </div>
 

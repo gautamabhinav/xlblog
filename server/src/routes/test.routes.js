@@ -2,8 +2,8 @@ import { Router } from 'express';
 
 import { isLoggedIn, authorizeRoles } from '../middlewares/auth.middleware.js';
 import validateObjectId from '../middlewares/validateObjectId.middleware.js';
-import { createTest, updateTest, getAttempt, getTest, listTests, submitAttempt, listAttempts, uploadPdfAndCreateTest, parsePdfOnly, importParsedTest, mergePdfsAndParse, listMyAttempts, getLeaderboard } from '../controllers/test.controller.js';
-import upload from '../middlewares/multer.middleware.js';
+import { createTest, createTestFromIngestion, updateTest, getAttempt, getTest, ingestTestFile, listTests, submitAttempt, listAttempts, uploadPdfAndCreateTest, parsePdfOnly, importParsedTest, mergePdfsAndParse, listMyAttempts, getLeaderboard } from '../controllers/test.controller.js';
+import { uploadMultiple, uploadSingle } from '../middlewares/multer.middleware.js';
 
 // const router = Router();
 
@@ -33,12 +33,14 @@ router.get('/attempts/me', isLoggedIn, listMyAttempts);
 router.get('/attempt/:id', isLoggedIn, getAttempt);
 // leaderboard (public - allow visiting leaderboards without authentication)
 router.get('/:id/leaderboard', validateObjectId, getLeaderboard);
+router.post('/ingest', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), uploadSingle('file', ['pdf', 'excel', 'image']), ingestTestFile);
+router.post('/from-ingestion', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), createTestFromIngestion);
 // Parse-only endpoint (preview) and import endpoint (final save)
-router.post('/parse-pdf', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), upload.single('pdf'), parsePdfOnly);
-router.post('/merge-parse', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), upload.array('pdfs', 8), mergePdfsAndParse);
+router.post('/parse-pdf', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), uploadSingle('pdf', ['pdf']), parsePdfOnly);
+router.post('/merge-parse', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), uploadMultiple('pdfs', ['pdf'], 8), mergePdfsAndParse);
 router.post('/import-parsed', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), importParsedTest);
 // Backwards-compatible single-step upload+create
-router.post('/upload-pdf', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), upload.single('pdf'), uploadPdfAndCreateTest);
+router.post('/upload-pdf', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), uploadSingle('pdf', ['pdf']), uploadPdfAndCreateTest);
 // router.post('/:id/submit', isLoggedIn, submitAttempt);
 
 // ❌ generic route last

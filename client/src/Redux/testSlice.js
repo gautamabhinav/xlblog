@@ -186,8 +186,7 @@ export const fetchAttempt = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const res = await axiosInstance.get(`/tests/attempt/${id}`);
-      // console.log("Fetched attempt:", res.data.attempt);
-      return res.data.attempt;
+      return res.data;
     } catch (err) {
       return rejectWithValue(normalizeError(err));
     }
@@ -221,7 +220,7 @@ const testsSlice = createSlice({
       })
       .addCase(fetchAttempt.fulfilled, (state, action) => {
         state.loading.attempt = false;
-        state.attempt = action.payload;
+        state.attempt = action.payload?.attempt || action.payload;
       })
       .addCase(submitAttempt.fulfilled, (state, action) => {
         state.loading.submit = false;

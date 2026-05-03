@@ -5,20 +5,96 @@ import AppError from '../utils/AppError.js';
 import mongoose from 'mongoose';
 import { parsePdfToQuestions } from '../services/pdf.service.js';
 import { PDFDocument } from 'pdf-lib';
-import upload from '../middlewares/multer.middleware.js';
 import fs from 'fs/promises';
+import { calculateRankAndPercentile, calculateScore } from '../services/scoring.service.js';
+import { detectDuplicateQuestions, ingestExamFile } from '../services/examIngestion.service.js';
+
+const normalizeQuestion = (question, config = {}) => {
+  const correctAnswers = Array.isArray(question.correctAnswers) && question.correctAnswers.length
+    ? question.correctAnswers.map(Number)
+    : (question.options || [])
+        .map((option, index) => (option.isCorrect ? index : -1))
+        .filter((index) => index >= 0);
+
+  return {
+    text: String(question.text || question.question || "").trim(),
+    options: (question.options || []).map((option, index) => ({
+      text: String(option.text || option || "").trim(),
+      isCorrect: correctAnswers.includes(index),
+    })),
+    correctAnswers,
+    marks: Number(question.marks || config.marksPerQuestion || 1),
+    difficulty: String(question.difficulty || "MEDIUM").toUpperCase(),
+    topic: question.topic || "General",
+    explanation: question.explanation,
+    reviewStatus: question.reviewStatus || "VALID",
+    reviewNotes: question.reviewNotes || [],
+    source: question.source || { type: "MANUAL" },
+  };
+};
+
+const validateQuestion = (question, index, optionsCount) => {
+  if (!question.text) throw new AppError(`Question ${index + 1} text is required`, 400);
+  if (question.options.length < 4 || question.options.length > 5) {
+    throw new AppError(`Question ${index + 1} must have 4 or 5 options`, 400);
+  }
+  if (optionsCount && question.options.length !== optionsCount) {
+    throw new AppError(`Question ${index + 1} must have exactly ${optionsCount} options`, 400);
+  }
+  if (question.options.some((option) => !option.text)) {
+    throw new AppError(`Question ${index + 1} has an empty option`, 400);
+  }
+  if (!question.correctAnswers.length) {
+    throw new AppError(`Question ${index + 1} must have at least one correct answer`, 400);
+  }
+};
+
+const buildTestPayload = (body, userId) => {
+  const marksPerQuestion = Number(body.marksPerQuestion || body.marks_per_question || 1);
+  const optionsCount = Number(body.optionsCount || body.options_count || 4);
+  const negativeMarkingEnabled = Boolean(body.negativeMarkingEnabled ?? body.negative_marking_enabled);
+  const penaltyRatio = negativeMarkingEnabled ? Number(body.penaltyRatio || body.negativeRatio || body.negative_ratio || 4) : 0;
+  const questions = (body.questions || []).map((question) =>
+    normalizeQuestion(question, { marksPerQuestion })
+  );
+
+  questions.forEach((question, index) => validateQuestion(question, index, optionsCount));
+
+  return {
+    title: String(body.title || "").trim(),
+    description: body.description,
+    durationSeconds: Number(body.durationSeconds || body.duration_seconds || 300),
+    marksPerQuestion,
+    negativeMarkingEnabled,
+    penaltyRatio,
+    optionsCount,
+    status: body.status || "DRAFT",
+    pattern: {
+      exam: body.examPattern || body.pattern?.exam || "CUSTOM",
+      ...(body.pattern || {}),
+      antiCheat: {
+        fullscreenRequired: Boolean(body.fullscreenRequired || body.pattern?.antiCheat?.fullscreenRequired),
+        maxTabSwitches: Number(body.maxTabSwitches || body.pattern?.antiCheat?.maxTabSwitches || 3),
+        autoSubmitOnViolation: Boolean(body.autoSubmitOnViolation || body.pattern?.antiCheat?.autoSubmitOnViolation),
+      },
+    },
+    questions,
+    author: userId,
+  };
+};
 
 
 // Create a new test (admin only ideally)
 export const createTest = asyncHandler(async (req, res, next) => {
-  const { title, description, durationSeconds, questions } = req.body;
+  const payload = buildTestPayload(req.body, req.user?._id);
 
-  if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
+  if (!payload.title || !payload.questions.length) {
     return next(new AppError('Missing title or questions', 400));
   }
 
-  const test = await Test.create({ title, description, durationSeconds, questions, author: req.user?._id });
-  res.status(201).json({ success: true, test });
+  const duplicates = detectDuplicateQuestions(payload.questions);
+  const test = await Test.create(payload);
+  res.status(201).json({ success: true, test, duplicates });
 });
 
 export const updateTest = asyncHandler(async (req, res, next) => {
@@ -72,7 +148,7 @@ export const updateTest = asyncHandler(async (req, res, next) => {
 });
 
 export const listTests = asyncHandler(async (req, res, next) => {
-  const tests = await Test.find().select('title description durationSeconds createdAt');
+  const tests = await Test.find().select('title description durationSeconds totalQuestions marksPerQuestion negativeMarkingEnabled penaltyRatio optionsCount status pattern createdAt');
   res.json({ success: true, tests });
 });
 
@@ -89,6 +165,9 @@ export const getTest = asyncHandler(async (req, res, next) => {
   test.questions = test.questions.map((q) => ({
     _id: q._id,
     text: q.text,
+    marks: q.marks,
+    difficulty: q.difficulty,
+    topic: q.topic,
     options: q.options.map((o) => ({ text: o.text })),
   }));
   res.json({ success: true, test });
@@ -109,27 +188,50 @@ export const submitAttempt = asyncHandler(async (req, res, next) => {
   const test = await Test.findById(testId);
   if (!test) return next(new AppError('Test not found', 404));
 
-  let score = 0;
-  const perQuestion = [];
-  test.questions.forEach((q, qi) => {
-    const provided = answers.find((a) => String(a.questionId) === String(q._id));
-    const correctIndex = q.options.findIndex((o) => o.isCorrect);
-    let got = 0;
-    let selected = null;
-    if (provided) {
-      selected = provided.selectedOptionIndex;
-      if (selected === correctIndex) { got = 1; score += 1; }
-    }
-    perQuestion.push({ questionId: q._id, correctIndex, selected, got, text: q.text });
+  const result = calculateScore({
+    test,
+    answers,
+    durationSeconds,
+    violations: req.body.violations || {},
   });
 
-  const attempt = await Attempt.create({ test: test._id, user: req.user?._id, answers, score, maxScore: test.questions.length, durationSeconds });
+  const attempt = await Attempt.create({
+    test: test._id,
+    user: req.user?._id,
+    answers,
+    score: result.score,
+    maxScore: result.maxScore,
+    durationSeconds,
+    correctCount: result.correctCount,
+    wrongCount: result.wrongCount,
+    skippedCount: result.skippedCount,
+    accuracy: result.accuracy,
+    violations: result.violations,
+    analytics: result.analytics,
+  });
 
-  // Basic analysis: percent, time per question, list of wrong questions
-  const percent = Math.round((score / Math.max(1, test.questions.length)) * 100);
-  const wrong = perQuestion.filter((p) => p.got === 0);
+  const rankInfo = await calculateRankAndPercentile({ Attempt, testId: test._id, score: result.score });
+  attempt.rank = rankInfo.rank;
+  attempt.percentile = rankInfo.percentile;
+  await attempt.save();
 
-  res.json({ success: true, attempt, analysis: { score, maxScore: test.questions.length, percent, wrong, perQuestion } });
+  res.json({
+    success: true,
+    attempt,
+    analysis: {
+      ...result,
+      rank: attempt.rank,
+      percentile: attempt.percentile,
+      percent: result.maxScore ? Math.round((result.score / result.maxScore) * 100) : 0,
+      perQuestion: result.analytics.perQuestion,
+      topicWise: result.analytics.topicWise,
+      difficultyWise: result.analytics.difficultyWise,
+      heatmap: result.analytics.heatmap,
+      weakAreas: result.analytics.weakAreas,
+      strongAreas: result.analytics.strongAreas,
+      wrong: result.analytics.perQuestion.filter((item) => item.status === "WRONG"),
+    },
+  });
 });
 
 export const getAttempt = asyncHandler(async (req, res, next) => {
@@ -140,7 +242,67 @@ export const getAttempt = asyncHandler(async (req, res, next) => {
 
   const attempt = await Attempt.findById(id).populate('test');
   if (!attempt) return next(new AppError('Attempt not found', 404));
-  res.json({ success: true, attempt });
+  res.json({
+    success: true,
+    attempt,
+    analysis: {
+      score: attempt.score,
+      maxScore: attempt.maxScore,
+      correctCount: attempt.correctCount,
+      wrongCount: attempt.wrongCount,
+      skippedCount: attempt.skippedCount,
+      accuracy: attempt.accuracy,
+      rank: attempt.rank,
+      percentile: attempt.percentile,
+      perQuestion: attempt.analytics?.perQuestion || [],
+      topicWise: attempt.analytics?.topicWise || [],
+      difficultyWise: attempt.analytics?.difficultyWise || [],
+      heatmap: attempt.analytics?.heatmap || [],
+      weakAreas: attempt.analytics?.weakAreas || [],
+      strongAreas: attempt.analytics?.strongAreas || [],
+    },
+  });
+});
+
+export const ingestTestFile = asyncHandler(async (req, res, next) => {
+  if (!req.file) return next(new AppError("No file uploaded", 400));
+
+  try {
+    const parsed = await ingestExamFile(req.file, {
+      optionsCount: Number(req.body.optionsCount || 4),
+      marksPerQuestion: Number(req.body.marksPerQuestion || 1),
+      topic: req.body.topic || "General",
+    });
+
+    res.status(200).json({
+      ...parsed,
+      duplicates: detectDuplicateQuestions(parsed.questions),
+    });
+  } catch (error) {
+    return next(new AppError(error.message || "Failed to ingest exam file", 400));
+  }
+});
+
+export const createTestFromIngestion = asyncHandler(async (req, res, next) => {
+  const questions = (req.body.questions || []).map((question) => ({
+    ...question,
+    reviewStatus: question.reviewStatus || "VALID",
+  }));
+
+  const payload = buildTestPayload({ ...req.body, questions }, req.user?._id);
+  if (!payload.title || !payload.questions.length) {
+    return next(new AppError("Missing title or parsed questions", 400));
+  }
+
+  const test = await Test.create(payload);
+  const reviewQueue = test.questions.filter((question) => question.reviewStatus !== "VALID");
+
+  res.status(201).json({
+    success: true,
+    test,
+    reviewQueue,
+    duplicates: detectDuplicateQuestions(test.questions),
+  });
 });
 
 // List attempts (optionally filter by test id)
@@ -251,7 +413,13 @@ export const uploadPdfAndCreateTest = asyncHandler(async (req, res, next) => {
   // create test document
   const newTest = await Test.create({ title: parsed.title || originalName, description: `Imported from ${originalName}`, questions: parsed.questions, author: req.user?._id });
 
-  res.status(201).json({ success: true, test: newTest });
+  res.status(201).json({
+    success: true,
+    fileUrl: file.fileUrl,
+    fileType: file.fileType,
+    originalName: file.originalname,
+    test: newTest,
+  });
 });
 
 // Merge multiple uploaded PDFs into one, then parse (no DB save)
@@ -278,7 +446,7 @@ export const mergePdfsAndParse = asyncHandler(async (req, res, next) => {
     const debug = req.query && (req.query.debug === '1' || req.query.debug === 'true');
     const useOcr = (req.body && (req.body.useOcr === '1' || req.body.useOcr === 'true')) || (req.query && (req.query.useOcr === '1' || req.query.useOcr === 'true')) || false;
     const parsed = await parsePdfToQuestions(Buffer.from(mergedBytes), 'merged.pdf', { debug, useOcr });
-    res.json({ success: true, parsed, usedOcr: !!useOcr });
+    res.json({ success: true, parsed, usedOcr: !!useOcr, files: files.map((file) => file.upload) });
   } catch (err) {
     console.error('Merge+parse failed', err);
     return next(new AppError('Failed to merge or parse PDFs', 500));
@@ -351,7 +519,13 @@ export const parsePdfOnly = asyncHandler(async (req, res, next) => {
       });
     }
 
-    res.json({ success: true, parsed });
+    res.json({
+      success: true,
+      fileUrl: file.fileUrl,
+      fileType: file.fileType,
+      originalName: file.originalname,
+      parsed,
+    });
 
   } catch (err) {
     console.error('PARSE ERROR:', err);

@@ -169,8 +169,36 @@ export const getAllPosts = asyncHandler(async (req, res, next) => {
 
 
 import fs from "fs/promises";
-import path from "path";
 import cloudinary from "cloudinary";
+
+const isCloudinaryConfigured = () =>
+  Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+      process.env.CLOUDINARY_API_KEY &&
+      process.env.CLOUDINARY_API_SECRET
+  );
+
+const resolveUploadedImage = async (file) => {
+  if (!file) return null;
+
+  if (!isCloudinaryConfigured()) {
+    return {
+      public_id: file.filename,
+      secure_url: file.fileUrl,
+    };
+  }
+
+  const result = await cloudinary.v2.uploader.upload(file.path, {
+    folder: 'blog',
+  });
+
+  await fs.rm(file.path, { force: true });
+
+  return {
+    public_id: result.public_id,
+    secure_url: result.secure_url,
+  };
+};
 
 // Create a new post
 export const createPost = asyncHandler(async (req, res, next) => {
@@ -226,22 +254,9 @@ export const createPost = asyncHandler(async (req, res, next) => {
     // Handle file upload if present
     if (req.file) {
         try {
-            const result = await cloudinary.v2.uploader.upload(req.file.path, {
-                folder: 'blog',
-            });
-
-            if (result) {
-                newPost.thumbnail = {
-                    public_id: result.public_id,
-                    secure_url: result.secure_url
-                };
-            }
-
-            await fs.rm(`uploads/${req.file.filename}`);
+            newPost.thumbnail = await resolveUploadedImage(req.file);
         } catch (error) {
-            for (const file of await fs.readdir('uploads/')) {
-                await fs.unlink(path.join('uploads/', file));
-            }
+            await fs.rm(req.file.path, { force: true });
             return next(new AppError(JSON.stringify(error) || 'File not uploaded, please try again', 400));
         }
     }
@@ -392,6 +407,15 @@ export const updatePost = asyncHandler(async (req, res, next) => {
     }
 
     updates.category = categoryId;
+  }
+
+  if (req.file) {
+    try {
+      updates.thumbnail = await resolveUploadedImage(req.file);
+    } catch (error) {
+      await fs.rm(req.file.path, { force: true });
+      return next(new AppError(JSON.stringify(error) || "File not uploaded, please try again", 400));
+    }
   }
 
   const updatedPost = await Post.findByIdAndUpdate(id, { $set: updates }, { 

@@ -46,7 +46,7 @@ const Footer = () => {
           {/* Brand + tagline */}
           <div className="space-y-4">
             <h3 className="text-2xl font-bold tracking-tight text-white">
-              Excel Analytics Blogging Platform
+              Test Platform
             </h3>
             <p className="text-sm text-zinc-300 max-w-sm">
               Where ideas meet readers — publish, share, and discover thoughtful

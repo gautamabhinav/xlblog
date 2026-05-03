@@ -340,6 +340,9 @@ import errorMiddleware from "./src/middlewares/error.middleware.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { corsOriginDelegate } from "./src/configs/cors.config.js";
+import { UPLOAD_ROOT } from "./src/configs/multer.config.js";
+import { multerErrorHandler } from "./src/middlewares/multer.middleware.js";
+import { requestLogger } from "./src/utils/logger.js";
 
 // import session from "express-session";
 import MongoStore from "connect-mongo";
@@ -376,7 +379,9 @@ app.use(
 );
 
 app.use(morgan("dev"));
+app.use(requestLogger);
 app.use(cookieParser());
+app.use("/uploads", express.static(UPLOAD_ROOT));
 
 // app.use(
 //   session({
@@ -432,6 +437,7 @@ import summaryRoutes from "./src/routes/summary.routes.js";
 import commentRoutes from "./src/routes/comment.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
 import testRoutes from "./src/routes/test.routes.js";
+import fileRoutes from "./src/routes/file.routes.js";
 import session from "express-session";
 
 app.use("/api/v1/user", userRoutes);
@@ -447,6 +453,7 @@ app.use("/api/v1/stats", statsRoute);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/likes", blogLikeRoute);
 app.use("/api/v1/tests", testRoutes);
+app.use("/api/v1/files", fileRoutes);
 
 // ---------------- Frontend (Production) ----------------
 if (process.env.NODE_ENV === "production") {
@@ -460,6 +467,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // ---------------- Error Handling ----------------
+app.use(multerErrorHandler);
 app.use(errorMiddleware);
 
 app.use((_req, res) => {
