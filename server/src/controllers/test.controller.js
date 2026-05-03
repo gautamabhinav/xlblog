@@ -21,6 +21,56 @@ export const createTest = asyncHandler(async (req, res, next) => {
   res.status(201).json({ success: true, test });
 });
 
+export const updateTest = asyncHandler(async (req, res, next) => {
+  const id = req.params.id;
+  const { title, description, durationSeconds, questions } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(new AppError('Invalid test ID', 400));
+  }
+
+  if (!title || !questions || !Array.isArray(questions) || questions.length === 0) {
+    return next(new AppError('Missing title or questions', 400));
+  }
+
+  const cleanedQuestions = questions.map((q, qi) => {
+    if (!String(q.text || '').trim() || !Array.isArray(q.options) || q.options.length < 2 || q.options.length > 4) {
+      throw new AppError(`Question ${qi + 1} must have text and 2-4 options`, 400);
+    }
+
+    const cleanedOptions = q.options.map((o) => ({
+      text: String(o.text || '').trim(),
+      isCorrect: !!o.isCorrect,
+    }));
+
+    if (cleanedOptions.some((o) => !o.text)) {
+      throw new AppError(`Question ${qi + 1} has an empty option`, 400);
+    }
+
+    const correctCount = cleanedOptions.filter((o) => o.isCorrect).length;
+    if (correctCount !== 1) {
+      throw new AppError(`Question ${qi + 1} must have exactly one correct option`, 400);
+    }
+
+    return { text: String(q.text).trim(), options: cleanedOptions };
+  });
+
+  const test = await Test.findByIdAndUpdate(
+    id,
+    {
+      title: String(title).trim(),
+      description,
+      durationSeconds,
+      questions: cleanedQuestions,
+    },
+    { new: true, runValidators: true }
+  );
+
+  if (!test) return next(new AppError('Test not found', 404));
+
+  res.json({ success: true, test });
+});
+
 export const listTests = asyncHandler(async (req, res, next) => {
   const tests = await Test.find().select('title description durationSeconds createdAt');
   res.json({ success: true, tests });

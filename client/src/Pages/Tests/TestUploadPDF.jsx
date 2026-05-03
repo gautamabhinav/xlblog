@@ -42,6 +42,7 @@ export default function TestUploadPDF(){
   const [createdDebug, setCreatedDebug] = useState(null);
   const [preview, setPreview] = useState(null); // original parsed data (immutable)
   const [editable, setEditable] = useState(null); // user editable copy
+  const [editingTestId, setEditingTestId] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
   const [showConfirmImport, setShowConfirmImport] = useState(false);
@@ -109,6 +110,10 @@ export default function TestUploadPDF(){
       if (data?.parsed) {
         setPreview(data.parsed);
         setEditable(prepareEditable(data.parsed));
+        setEditingTestId(null);
+        setCreated(null);
+        setCreatedWarning(null);
+        setCreatedDebug(null);
       } else {
         setError('No parsed questions returned');
       }
@@ -120,10 +125,11 @@ export default function TestUploadPDF(){
   }
 
   const handleImport = async () => {
-    if (!editable || !editable.questions || editable.questions.length === 0) return setError('Nothing to import');
+    const source = editable || prepareEditable(preview);
+    if (!source || !source.questions || source.questions.length === 0) return setError('Nothing to import');
     // Validation
-    for (let i = 0; i < editable.questions.length; i++) {
-      const q = editable.questions[i];
+    for (let i = 0; i < source.questions.length; i++) {
+      const q = source.questions[i];
       if (!q.text || !q.text.trim()) return setError(`Question ${i+1} has empty text`);
       if (!Array.isArray(q.options) || q.options.length < 2) return setError(`Question ${i+1} must have at least 2 options`);
       if (q.options.length > 4) return setError(`Question ${i+1} can have at most 4 options`);
@@ -141,17 +147,22 @@ export default function TestUploadPDF(){
     try {
       // Prepare payload: strip local ids
       const payload = {
-        title: editable.title || preview?.title || `Imported from ${file?.name || 'PDF'}`,
+        title: source.title || preview?.title || `Imported from ${file?.name || 'PDF'}`,
         description: `Imported from ${file?.name || 'PDF'}`,
         durationSeconds: 300,
-        questions: editable.questions.map(q => ({ text: q.text, options: q.options.map(o => ({ text: o.text, isCorrect: !!o.isCorrect })) })),
+        questions: source.questions.map(q => ({ text: q.text, options: q.options.map(o => ({ text: o.text, isCorrect: !!o.isCorrect })) })),
       };
-  const { data } = await api.post('/tests/import-parsed', payload);
+      const { data } = editingTestId
+        ? await api.put(`/tests/${editingTestId}`, payload)
+        : await api.post('/tests/import-parsed', payload);
       if (data?.test) {
         setCreated(data.test);
         setCreatedWarning(data.warning || null);
         setCreatedDebug(data.debug || null);
-        toast.success('Test created successfully');
+        setEditingTestId(data.test._id || editingTestId);
+        setPreview(data.test);
+        setEditable(prepareEditable(data.test));
+        toast.success(editingTestId ? 'Test updated successfully' : 'Test created successfully');
         // Do not auto-navigate; show output on this page
       } else if (data?.parsed) {
         // server returned parsed (no create) — show preview so admin can edit
@@ -180,17 +191,18 @@ export default function TestUploadPDF(){
   if (useOcr) form.append('useOcr', '1');
       const { data } = await api.post('/tests/upload-pdf', form, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (data?.test) {
-        setCreated(data.test);
+        setPreview(data.test);
+        setEditable(prepareEditable(data.test));
+        setEditingTestId(data.test._id);
+        setCreated(null);
         setCreatedWarning(data.warning || null);
         setCreatedDebug(data.debug || null);
-        toast.success('Test created from PDF');
-        // clear preview/editable if present
-        setPreview(null);
-        setEditable(null);
+        toast.success('Test created. You can edit the preview now.');
       } else if (data?.parsed) {
         // server returned parsed preview only
         setPreview(data.parsed);
         setEditable(prepareEditable(data.parsed));
+        setEditingTestId(null);
         setCreatedWarning(data.message || 'Parsed PDF returned but no test created');
         setCreatedDebug(data._debug || data.debug || null);
       } else {
@@ -255,6 +267,23 @@ export default function TestUploadPDF(){
 
   const removeQuestion = (qid) => {
     setEditable(prev => ({ ...prev, questions: prev.questions.filter(q => q._localId !== qid) }));
+  }
+
+  const addQuestion = () => {
+    setEditable(prev => ({
+      ...prev,
+      questions: [
+        ...prev.questions,
+        {
+          _localId: `q-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+          text: '',
+          options: [
+            { text: '', isCorrect: true },
+            { text: '', isCorrect: false },
+          ],
+        },
+      ],
+    }));
   }
 
   const moveQuestion = (qid, dir) => {
@@ -370,7 +399,8 @@ export default function TestUploadPDF(){
 
           <div className="flex gap-2">
             <button disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded">{loading ? 'Parsing...' : 'Parse & Preview'}</button>
-            <button type="button" onClick={() => { setFile(null); setFiles([]); setError(null); setPreview(null); }} className="px-4 py-2 bg-gray-200 rounded">Reset</button>
+            <button type="button" onClick={() => { setFile(null); setFiles([]); setError(null); setPreview(null); setEditable(null); setEditingTestId(null); setCreated(null); setCreatedWarning(null); setCreatedDebug(null); }} className="px-4 py-2 bg-gray-200 rounded">Reset</button>
+            <button type="button" onClick={() => setShowConfirmUpload(true)} disabled={loading || !file} className="px-4 py-2 bg-blue-600 text-white rounded">Upload, Create & Edit</button>
             <button type="button" onClick={async () => {
               if (!files || files.length === 0) return setError('Select multiple PDFs to merge');
               setLoading(true); setError(null);
@@ -382,6 +412,10 @@ export default function TestUploadPDF(){
                 if (data?.parsed) {
                   setPreview(data.parsed);
                   setEditable(prepareEditable(data.parsed));
+                  setEditingTestId(null);
+                  setCreated(null);
+                  setCreatedWarning(null);
+                  setCreatedDebug(null);
                 } else {
                   setError('No parsed questions returned');
                 }
@@ -394,10 +428,19 @@ export default function TestUploadPDF(){
         {editable ? (
           <div className="mt-6 space-y-4">
             <div className="bg-white p-4 rounded shadow">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Editable Preview: {editable.title || preview?.title}</h3>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="font-semibold">{editingTestId ? 'Edit Created Test Preview' : 'Editable Preview'}</h3>
+                  <input
+                    value={editable.title}
+                    onChange={(e) => setEditable(prev => ({ ...prev, title: e.target.value }))}
+                    className="mt-2 w-full p-2 border rounded"
+                    placeholder="Test title"
+                  />
+                </div>
                 <div className="flex gap-2">
-                  <button onClick={() => { setEditable(null); setPreview(null); }} className="px-3 py-1 bg-gray-200 rounded">Close</button>
+                  <button type="button" onClick={() => setIsPreviewMode(v => !v)} className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded">{isPreviewMode ? 'Edit' : 'Preview'}</button>
+                  <button onClick={() => { setEditable(null); setPreview(null); setEditingTestId(null); }} className="px-3 py-1 bg-gray-200 rounded">Close</button>
                 </div>
               </div>
             </div>
@@ -420,9 +463,9 @@ export default function TestUploadPDF(){
                   {validation.invalid > 0 && <div className="text-xs text-red-600">{validation.invalid} items invalid</div>}
                 </div>
                 <div className="flex gap-2">
-          <button onClick={() => setShowConfirmImport(true)} disabled={loading || !isAllValid} className={`px-4 py-2 ${isAllValid ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'} rounded`}>{loading ? 'Importing...' : 'Confirm & Create Test'}</button>
-        <button onClick={() => setShowConfirmUpload(true)} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">Upload & Create (one-step)</button>
-                  <button onClick={() => { setEditable(null); setPreview(null); }} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                  {!isPreviewMode && <button type="button" onClick={addQuestion} className="px-4 py-2 bg-gray-200 rounded">Add Question</button>}
+          <button onClick={() => setShowConfirmImport(true)} disabled={loading || !isAllValid} className={`px-4 py-2 ${isAllValid ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'} rounded`}>{loading ? 'Saving...' : editingTestId ? 'Save Edited Test' : 'Confirm & Create Test'}</button>
+                  <button onClick={() => { setEditable(null); setPreview(null); setEditingTestId(null); }} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
                 </div>
               </div>
             </div>
@@ -442,7 +485,7 @@ export default function TestUploadPDF(){
               <div className="mt-4 flex gap-2">
               <button onClick={() => { setEditable(prepareEditable(preview)); }} className="px-4 py-2 bg-yellow-500 text-black rounded">Edit before import</button>
               <button onClick={() => setShowConfirmImport(true)} disabled={loading} className="px-4 py-2 bg-green-600 text-white rounded">{loading ? 'Importing...' : 'Confirm & Create Test'}</button>
-              <button onClick={() => setShowConfirmUpload(true)} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">Upload & Create (one-step)</button>
+              <button onClick={() => setShowConfirmUpload(true)} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded">Upload, Create & Edit</button>
               <button onClick={() => { setPreview(null); }} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
             </div>
           </div>
@@ -483,11 +526,11 @@ export default function TestUploadPDF(){
         {showConfirmImport && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
             <div className="bg-white p-6 rounded shadow max-w-lg w-full">
-              <h4 className="font-semibold mb-2">Confirm create test</h4>
-              <p className="text-sm text-gray-600 mb-4">This will create a test from the edited preview. Are you sure?</p>
+              <h4 className="font-semibold mb-2">{editingTestId ? 'Save edited test' : 'Confirm create test'}</h4>
+              <p className="text-sm text-gray-600 mb-4">{editingTestId ? 'This will save your edits to the test created from the PDF.' : 'This will create a test from the edited preview. Are you sure?'}</p>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setShowConfirmImport(false)} className="px-3 py-1 bg-gray-200 rounded">Cancel</button>
-                <button onClick={async () => { setShowConfirmImport(false); await handleImport(); }} className="px-3 py-1 bg-green-600 text-white rounded">Yes, create</button>
+                <button onClick={async () => { setShowConfirmImport(false); await handleImport(); }} className="px-3 py-1 bg-green-600 text-white rounded">{editingTestId ? 'Yes, save' : 'Yes, create'}</button>
               </div>
             </div>
           </div>
@@ -496,11 +539,11 @@ export default function TestUploadPDF(){
         {showConfirmUpload && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
             <div className="bg-white p-6 rounded shadow max-w-lg w-full">
-              <h4 className="font-semibold mb-2">Confirm upload & create</h4>
-              <p className="text-sm text-gray-600 mb-4">This will upload the PDF and create a test in one step (best-effort parsing). Continue?</p>
+              <h4 className="font-semibold mb-2">Confirm upload, create & edit</h4>
+              <p className="text-sm text-gray-600 mb-4">This will create a test from the PDF, then open it as an editable preview so you can make changes.</p>
               <div className="flex gap-2 justify-end">
                 <button onClick={() => setShowConfirmUpload(false)} className="px-3 py-1 bg-gray-200 rounded">Cancel</button>
-                <button onClick={async () => { setShowConfirmUpload(false); await handleUploadAndCreate(); }} className="px-3 py-1 bg-blue-600 text-white rounded">Yes, upload & create</button>
+                <button onClick={async () => { setShowConfirmUpload(false); await handleUploadAndCreate(); }} className="px-3 py-1 bg-blue-600 text-white rounded">Yes, continue</button>
               </div>
             </div>
           </div>

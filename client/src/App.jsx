@@ -1,5 +1,6 @@
 // import React from "react";
 import { Routes, Route, Router, Link } from "react-router-dom";
+// import LayoutImproved from "./Layout/LayoutImproved";
 import About from "./Pages/About";
 import Contact from "./Pages/Contact";
 //import CourseList from "./Pages/Course/CourseList";
@@ -53,7 +54,7 @@ import CommentList from "./Components/Comments/CommentList";
 const App = () => {
   return (
     <>
-
+    {/* <LayoutImproved> */}
       <Routes>
         <Route path="/" element={<HomePage />} />
         {/* <Route path="/courses" element={<CourseList />} /> */}
@@ -120,6 +121,7 @@ const App = () => {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+    {/* </LayoutImproved> */}
     </>
   );
 };

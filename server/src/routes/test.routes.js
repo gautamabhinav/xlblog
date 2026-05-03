@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import { isLoggedIn, authorizeRoles } from '../middlewares/auth.middleware.js';
 import validateObjectId from '../middlewares/validateObjectId.middleware.js';
-import { createTest, getAttempt, getTest, listTests, submitAttempt, listAttempts, uploadPdfAndCreateTest, parsePdfOnly, importParsedTest, mergePdfsAndParse, listMyAttempts, getLeaderboard } from '../controllers/test.controller.js';
+import { createTest, updateTest, getAttempt, getTest, listTests, submitAttempt, listAttempts, uploadPdfAndCreateTest, parsePdfOnly, importParsedTest, mergePdfsAndParse, listMyAttempts, getLeaderboard } from '../controllers/test.controller.js';
 import upload from '../middlewares/multer.middleware.js';
 
 // const router = Router();
@@ -42,6 +42,7 @@ router.post('/upload-pdf', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), upl
 // router.post('/:id/submit', isLoggedIn, submitAttempt);
 
 // ❌ generic route last
+router.put('/:id', isLoggedIn, authorizeRoles('ADMIN','SUPERADMIN'), validateObjectId, updateTest);
 router.get('/:id', isLoggedIn, validateObjectId, getTest);
 
 // Protect submit route and validate provided id param
