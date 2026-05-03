@@ -339,6 +339,7 @@ import morgan from "morgan";
 import errorMiddleware from "./src/middlewares/error.middleware.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { corsOriginDelegate } from "./src/configs/cors.config.js";
 
 // import session from "express-session";
 import MongoStore from "connect-mongo";
@@ -366,25 +367,11 @@ if (process.env.NODE_ENV === "test") {
 
 app.set('trust proxy', 1);
 
-const allowedOrigins = [
-  "http://localhost:5173", // local frontend
-  "https://xlblog-1.onrender.com", // your Render frontend
-];
-
-// include FRONTEND_URL env if present
-if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL);
-
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: corsOriginDelegate,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   })
 );
 

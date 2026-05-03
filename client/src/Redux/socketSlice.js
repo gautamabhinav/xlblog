@@ -53,13 +53,12 @@ import { io } from "socket.io-client";
 // Keep socket instance OUTSIDE redux state
 let socket = null;
 
-// ✅ Use backend Render URL in production
 const BASE_URL =
   import.meta.env.MODE === "development"
     ? "http://localhost:5014"
-    : "https://blex-thlc.onrender.com"; // your backend URL
-
-socket = io(BASE_URL, { withCredentials: true });
+    : import.meta.env.VITE_SOCKET_URL ||
+      import.meta.env.VITE_API_URL?.replace(/\/api\/v1\/?$/, "") ||
+      "https://blex-thlc.onrender.com";
 
 const initialState = {
   connected: false,
@@ -100,7 +99,8 @@ export const connectSocket = () => (dispatch, getState) => {
   if (!socket) {
     socket = io(BASE_URL, {
       withCredentials: true,
-      transports: ["websocket", "polling"], // ✅ ensure compatibility
+      transports: ["websocket", "polling"],
+      autoConnect: false,
     });
   }
 

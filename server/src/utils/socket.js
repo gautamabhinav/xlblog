@@ -3,13 +3,14 @@ import http from "http";
 import express from "express";
 // import { ENV } from "./env.js";
 import { socketAuthMiddleware } from "../middlewares/socket.auth.middleware.js";
+import { corsOriginDelegate } from "../configs/cors.config.js";
 
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: [process.env.FRONTEND_URL, "http://localhost:5173"],
+    origin: corsOriginDelegate,
     credentials: true,
   },
 });

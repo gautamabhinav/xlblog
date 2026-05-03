@@ -100,6 +100,7 @@ import { Server } from "socket.io";
 
 import app from "./app.js";
 import connectToDB from "./src/configs/dbConn.js";
+import { allowedOrigins, corsOriginDelegate } from "./src/configs/cors.config.js";
 
 const port = process.env.PORT || 10000;
 
@@ -113,16 +114,10 @@ cloudinary.config({
 // ✅ Create HTTP server (Express wrapped)
 const server = http.createServer(app);
 
-// ✅ Dynamically choose allowed origins
-const allowedOrigins = [
-  "http://localhost:5173", // frontend dev
-  process.env.FRONTEND_URL, // production
-].filter(Boolean); // remove undefined/null
-
 // ✅ Attach Socket.IO with flexible CORS
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: corsOriginDelegate,
     methods: ["GET", "POST"],
     credentials: true,
   },
