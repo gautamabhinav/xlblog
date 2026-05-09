@@ -4,6 +4,117 @@
 
 body{
    position: relative;
-   max-width: 1440px;
+   max-width: none;
    margin: auto;
+   background: #06080d;
+   color: #e5e7eb;
+   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+html {
+   scroll-behavior: smooth;
+}
+
+* {
+   scrollbar-width: thin;
+   scrollbar-color: rgba(148, 163, 184, .55) transparent;
+}
+
+::-webkit-scrollbar {
+   width: 10px;
+   height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+   background: linear-gradient(180deg, rgba(229,9,20,.78), rgba(0,168,255,.72));
+   border-radius: 999px;
+}
+
+.premium-scroll {
+   scroll-snap-type: x mandatory;
+   -webkit-overflow-scrolling: touch;
+}
+
+.premium-scroll > * {
+   scroll-snap-align: start;
+}
+
+.premium-scroll::-webkit-scrollbar {
+   height: 6px;
+}
+
+@layer components {
+  .ott-control {
+    @apply inline-flex items-center gap-2 rounded-[8px] border border-white/10 bg-white/[0.07] px-3 py-2 text-sm text-white transition hover:bg-white/[0.13] focus:outline-none focus:ring-2 focus:ring-cyan-300;
+  }
+
+  .cinematic-input {
+    @apply rounded-premium border border-white/10 bg-black/35 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-300 focus:ring-2 focus:ring-sky-300/20;
+  }
+
+  .glass-card {
+    @apply rounded-premium border border-white/10 bg-white/[0.055] shadow-premium backdrop-blur-2xl;
+  }
+
+  .text-primary {
+    @apply text-slate-50;
+  }
+
+  .text-secondary {
+    @apply text-slate-300;
+  }
+
+  .bg-primary {
+    @apply bg-premium-black;
+  }
+
+  .bg-card {
+    @apply bg-white/[0.055];
+  }
+
+  .border-theme {
+    @apply border-white/10;
+  }
+
+  .button-theme {
+    @apply rounded-premium bg-gradient-to-r from-red-600 to-sky-500 px-4 py-2 font-bold text-white shadow-glow-red transition hover:brightness-110 disabled:opacity-50;
+  }
+
+  .premium-table {
+    @apply w-full border-separate border-spacing-0 text-left text-sm text-slate-200;
+  }
+
+  .premium-table th {
+    @apply border-b border-white/10 bg-white/[0.07] px-4 py-3 text-xs uppercase tracking-wide text-slate-300;
+  }
+
+  .premium-table td {
+    @apply border-b border-white/5 px-4 py-3 text-slate-200;
+  }
+}
+
+@layer base {
+  input,
+  textarea,
+  select {
+    color: #f8fafc;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #94a3b8;
+  }
+
+  select option {
+    background: #0f172a;
+    color: #f8fafc;
+  }
+
+  table {
+    color: inherit;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BsFacebook, BsInstagram, BsLinkedin, BsTwitter } from "react-icons/bs";
 import { FiMail } from "react-icons/fi";
@@ -9,227 +9,88 @@ const Footer = () => {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const submitNewsletter = (e) => {
-    e.preventDefault();
+  const submitNewsletter = (event) => {
+    event.preventDefault();
     if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       toast.error("Please enter a valid email");
       return;
     }
     setSubmitting(true);
-    // local confirmation (no external network call)
     setTimeout(() => {
       setSubmitting(false);
       setEmail("");
-      toast.success("Thanks — you’re subscribed!");
+      toast.success("You are subscribed");
     }, 600);
   };
 
   return (
-    <footer className="mt-12 bg-gradient-to-t from-zinc-900 via-zinc-950 to-black text-gray-200">
-      {/* Decorative divider */}
-      <div className="w-full overflow-hidden leading-[0] -mb-1">
-        <svg
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-          className="w-full h-6 opacity-30"
-        >
-          <path
-            d="M0,0 C300,100 900,0 1200,100 L1200,0 L0,0 Z"
-            className="fill-white"
-            opacity="0.03"
-          ></path>
-        </svg>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-          {/* Brand + tagline */}
+    <footer className="border-t border-white/10 bg-premium-black text-gray-200">
+      <div className="mx-auto max-w-7xl px-6 py-12 lg:py-16">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold tracking-tight text-white">
-              Test Platform
+            <h3 className="text-2xl font-black tracking-tight text-white">
+              XL<span className="text-red-500">Stream</span>
             </h3>
-            <p className="text-sm text-zinc-300 max-w-sm">
-              Where ideas meet readers — publish, share, and discover thoughtful
-              stories crafted by our community.
+            <p className="max-w-sm text-sm leading-6 text-zinc-300">
+              Premium LMS, OTT streaming, exams, analytics, and AI-ready learning experiences in one cinematic platform.
             </p>
-
-            <div className="flex items-center space-x-3 mt-3">
-              <div className="p-2 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 text-black font-semibold">
-                ARG
-              </div>
-              <span className="text-xs text-zinc-400">
-                Built for creators • Community-first
-              </span>
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-gradient-to-br from-red-600 to-sky-500 p-2 font-semibold text-white">XL</div>
+              <span className="text-xs text-zinc-400">Built for learners • OTT-first</span>
             </div>
-
-            <div className="flex gap-3 mt-4">
-              <a
-                aria-label="Facebook"
-                href="https://facebook.com"
-                target="_blank"
-                rel="noreferrer"
-                className="transform hover:-translate-y-1 transition-all text-2xl p-2 rounded-md bg-white/5 hover:bg-white/7"
-              >
-                <BsFacebook className="text-indigo-400" />
-              </a>
-              <a
-                aria-label="Instagram"
-                href="https://instagram.com"
-                target="_blank"
-                rel="noreferrer"
-                className="transform hover:-translate-y-1 transition-all text-2xl p-2 rounded-md bg-white/5 hover:bg-white/7"
-              >
-                <BsInstagram className="text-pink-400" />
-              </a>
-              <a
-                aria-label="Twitter"
-                href="https://twitter.com"
-                target="_blank"
-                rel="noreferrer"
-                className="transform hover:-translate-y-1 transition-all text-2xl p-2 rounded-md bg-white/5 hover:bg-white/7"
-              >
-                <BsTwitter className="text-sky-400" />
-              </a>
-              <a
-                aria-label="LinkedIn"
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noreferrer"
-                className="transform hover:-translate-y-1 transition-all text-2xl p-2 rounded-md bg-white/5 hover:bg-white/7"
-              >
-                <BsLinkedin className="text-blue-500" />
-              </a>
+            <div className="flex gap-3">
+              {[
+                [BsFacebook, "Facebook", "https://facebook.com", "text-indigo-300"],
+                [BsInstagram, "Instagram", "https://instagram.com", "text-pink-300"],
+                [BsTwitter, "Twitter", "https://twitter.com", "text-sky-300"],
+                [BsLinkedin, "LinkedIn", "https://linkedin.com", "text-blue-300"],
+              ].map(([Icon, label, href, color]) => (
+                <a key={label} aria-label={label} href={href} target="_blank" rel="noreferrer" className="rounded-premium bg-white/5 p-2 text-2xl transition hover:-translate-y-1 hover:bg-white/10">
+                  <Icon className={color} />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="flex flex-col md:items-start">
-            <h4 className="text-white font-medium mb-3">Quick links</h4>
+          <div>
+            <h4 className="mb-3 font-medium text-white">Explore</h4>
             <ul className="space-y-2 text-zinc-300">
-              <li>
-                <Link
-                  to="/"
-                  className="hover:text-white transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              {/* <li>
-                <Link
-                  to="/blogs"
-                  className="hover:text-white transition-colors"
-                >
-                  All Blogs
-                </Link>
-              </li> */}
-              <li>
-                <Link
-                  to="/about"
-                  className="hover:text-white transition-colors"
-                >
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contact"
-                  className="hover:text-white transition-colors"
-                >
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/user/profile"
-                  className="hover:text-white transition-colors"
-                >
-                  Your Profile
-                </Link>
-              </li>
+              <li><Link to="/" className="hover:text-white">Home</Link></li>
+              <li><Link to="/ott" className="hover:text-white">OTT Stream</Link></li>
+              <li><Link to="/courses" className="hover:text-white">Courses</Link></li>
+              <li><Link to="/tests" className="hover:text-white">Tests</Link></li>
+              <li><Link to="/user/profile" className="hover:text-white">Your Profile</Link></li>
             </ul>
-            
-
-            <div className="mt-6">
-              <h5 className="text-white font-medium mb-2">Resources</h5>
-              <ul className="text-zinc-300 text-sm space-y-1">
-                <li>
-                  <a className="hover:text-white" href="#">
-                    Terms
-                  </a>
-                </li>
-                <li>
-                  <a className="hover:text-white" href="#">
-                    Privacy
-                  </a>
-                </li>
-                <li>
-                  <a className="hover:text-white" href="#">
-                    Help Center
-                  </a>
-                </li>
-              </ul>
-            </div>
+            <h5 className="mb-2 mt-6 font-medium text-white">Resources</h5>
+            <ul className="space-y-1 text-sm text-zinc-300">
+              <li><a className="hover:text-white" href="#">Terms</a></li>
+              <li><a className="hover:text-white" href="#">Privacy</a></li>
+              <li><a className="hover:text-white" href="#">Help Center</a></li>
+            </ul>
           </div>
 
-          {/* Newsletter */}
-          <div className="md:pl-6">
-            <h4 className="text-white font-medium mb-3">
-              Join our newsletter
-            </h4>
-            <p className="text-zinc-300 text-sm mb-4">
-              Get short weekly digests with featured stories, tips, and community
-              highlights.
+          <div>
+            <h4 className="mb-3 font-medium text-white">Join our newsletter</h4>
+            <p className="mb-4 text-sm leading-6 text-zinc-300">
+              Get featured courses, exam drops, AI learning updates, and platform highlights.
             </p>
-
-            <form
-              onSubmit={submitNewsletter}
-              className="flex gap-2"
-            >
-              <label
-                htmlFor="footer-email"
-                className="sr-only"
-              >
-                Email address
-              </label>
+            <form onSubmit={submitNewsletter} className="flex gap-2">
+              <label htmlFor="footer-email" className="sr-only">Email address</label>
               <div className="relative flex-1">
-                <input
-                  id="footer-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@email.com"
-                  className="w-full rounded-lg px-4 py-3 bg-white/5 placeholder:text-zinc-400 text-white outline-none border border-transparent focus:border-yellow-400"
-                />
+                <input id="footer-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@email.com" className="w-full rounded-premium border border-white/10 bg-white/5 px-4 py-3 text-white outline-none placeholder:text-zinc-400 focus:border-sky-300" />
                 <FiMail className="absolute right-3 top-3 text-zinc-400" />
               </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-4 py-2 rounded-lg bg-yellow-400 text-black font-semibold hover:bg-yellow-500 transition-colors"
-              >
+              <button type="submit" disabled={submitting} className="rounded-premium bg-gradient-to-r from-red-600 to-sky-500 px-4 py-2 font-semibold text-white transition hover:brightness-110">
                 {submitting ? "Joining..." : "Join"}
               </button>
             </form>
-
-            <div className="mt-6 text-xs text-zinc-500">
-              No spam. Unsubscribe anytime.
-            </div>
+            <div className="mt-6 text-xs text-zinc-500">No spam. Unsubscribe anytime.</div>
           </div>
         </div>
 
-        <div className="border-t border-zinc-800 mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="text-zinc-400 text-sm">
-            © {year} Blogging Platform. All rights reserved.
-          </div>
-          <div className="text-zinc-400 text-sm">
-            Made in India ·{" "}
-            <Link
-              to="/about"
-              className="hover:text-white"
-            >
-              Our Team
-            </Link>
-          </div>
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-sm text-zinc-400 md:flex-row">
+          <div>© {year} XLStream. All rights reserved.</div>
+          <div>Made in India · <Link to="/about" className="hover:text-white">Our Team</Link></div>
         </div>
       </div>
     </footer>
@@ -237,4 +98,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

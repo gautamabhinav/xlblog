@@ -6,6 +6,8 @@ import Layout from "../Layout/Layout";
 import { login } from "../Redux/authSlice";
 import { motion } from "framer-motion";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { Clapperboard, LockKeyhole, Mail, Sparkles } from "lucide-react";
+import { CinematicPage, GlassPanel, PremiumButton, PremiumInput } from "../Components/Premium/PremiumShell";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -56,13 +58,24 @@ const Login = () => {
 
   return (
     <Layout>
-      <div className="min-h-[80vh] flex items-center justify-center p-6">
+      <CinematicPage className="flex items-center justify-center p-4">
+      <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1fr_440px] lg:items-center">
+        <div className="hidden lg:block">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.28em] text-sky-200"><Sparkles size={14} /> Secure Access</p>
+          <h1 className="mt-4 text-6xl font-black leading-none">Welcome back to your learning cinema.</h1>
+          <p className="mt-5 max-w-xl text-slate-300">Continue courses, resume tests, open AI insights, and manage your premium dashboard.</p>
+          <div className="mt-8 grid max-w-xl grid-cols-3 gap-3">
+            {["OTT", "Tests", "AI"].map((item) => (
+              <GlassPanel key={item} className="p-4 text-center"><Clapperboard className="mx-auto mb-3 h-5 w-5 text-red-200" />{item}</GlassPanel>
+            ))}
+          </div>
+        </div>
         <motion.form
           onSubmit={handleLogin}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="w-full max-w-md bg-gradient-to-br from-white/4 to-white/6 border border-zinc-800 rounded-2xl p-6 shadow-2xl text-white"
+          className="w-full bg-white/[0.055] border border-white/10 rounded-[18px] p-6 shadow-premium text-white backdrop-blur-2xl"
         >
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -74,28 +87,28 @@ const Login = () => {
 
           <div className="grid gap-3">
             <div className="flex flex-col">
-              <label className="text-sm text-zinc-300 mb-1">Email</label>
+              <label className="text-sm text-zinc-300 mb-1 inline-flex items-center gap-2"><Mail size={14} /> Email</label>
               <input
                 required
                 type="email"
                 name="email"
                 id="email"
                 placeholder="you@company.com"
-                className="w-full rounded-lg px-4 py-3 bg-black/20 text-white outline-none border border-transparent focus:border-yellow-400"
+                className="cinematic-input"
                 value={loginData.email}
                 onChange={handleUserInput}
               />
             </div>
 
             <div className="flex flex-col relative">
-              <label className="text-sm text-zinc-300 mb-1">Password</label>
+              <label className="text-sm text-zinc-300 mb-1 inline-flex items-center gap-2"><LockKeyhole size={14} /> Password</label>
               <input
                 required
                 type={showPassword ? "text" : "password"}
                 name="password"
                 id="password"
                 placeholder="Enter your password"
-                className="w-full rounded-lg px-4 py-3 bg-black/20 text-white outline-none border border-transparent focus:border-yellow-400 pr-10"
+                className="cinematic-input pr-10"
                 value={loginData.password}
                 onChange={handleUserInput}
               />
@@ -110,14 +123,12 @@ const Login = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <motion.button
-                whileTap={{ scale: 0.98 }}
+              <PremiumButton
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black px-5 py-2 rounded-lg font-semibold shadow-md"
               >
                 {loading ? "Signing in..." : "Sign in"}
-              </motion.button>
+              </PremiumButton>
 
               <button
                 type="button"
@@ -137,6 +148,7 @@ const Login = () => {
           </div>
         </motion.form>
       </div>
+      </CinematicPage>
     </Layout>
   );
 };

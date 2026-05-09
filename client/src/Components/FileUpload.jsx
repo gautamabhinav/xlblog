@@ -65,6 +65,22 @@ export default function FileUpload({
     setProgress(0);
 
     if (!nextFile) return;
+    const maxSizeMb = normalizedType === "image" ? 8 : normalizedType === "pdf" ? 25 : normalizedType === "excel" ? 15 : 500;
+    if (nextFile.size > maxSizeMb * 1024 * 1024) {
+      setError(`File is too large. Max ${maxSizeMb}MB allowed.`);
+      return;
+    }
+    if (normalizedType !== "any" && accept !== "*/*") {
+      const accepted = accept.split(",").some((rule) => {
+        const trimmed = rule.trim();
+        if (trimmed.endsWith("/*")) return nextFile.type.startsWith(trimmed.replace("/*", "/"));
+        return nextFile.type === trimmed;
+      });
+      if (!accepted) {
+        setError(`Invalid file type. Please upload a valid ${LABEL_BY_TYPE[normalizedType]}.`);
+        return;
+      }
+    }
 
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setFile(nextFile);
@@ -111,7 +127,7 @@ export default function FileUpload({
   };
 
   return (
-    <div className={`w-full rounded-lg border border-dashed p-4 ${isDragging ? "border-indigo-500 bg-indigo-50" : "border-gray-300"} ${className}`}>
+    <div className={`w-full rounded-premium border border-dashed p-4 ${isDragging ? "border-sky-300 bg-sky-400/10" : "border-white/15 bg-white/[0.045]"} ${className}`}>
       <input
         ref={inputRef}
         type="file"
@@ -131,39 +147,39 @@ export default function FileUpload({
         }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
-        className="flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-md bg-gray-50 px-4 py-6 text-center transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-36 w-full flex-col items-center justify-center gap-3 rounded-premium bg-black/25 px-4 py-6 text-center transition hover:bg-white/[0.07] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {previewUrl ? (
           <img src={previewUrl} alt={file?.name || "Selected file"} className="max-h-40 rounded-md object-contain" />
         ) : (
-          <Icon className="h-9 w-9 text-indigo-600" aria-hidden="true" />
+          <Icon className="h-9 w-9 text-sky-300" aria-hidden="true" />
         )}
-        <span className="text-sm font-medium text-gray-800">{file?.name || helperText}</span>
-        <span className="text-xs text-gray-500">Click to browse or drag and drop</span>
+        <span className="text-sm font-medium text-primary">{file?.name || helperText}</span>
+        <span className="text-xs text-secondary">Click to browse or drag and drop</span>
       </button>
 
       {file && (
-        <div className="mt-3 flex items-center justify-between gap-3 text-sm text-gray-700">
+        <div className="mt-3 flex items-center justify-between gap-3 text-sm text-secondary">
           <span className="truncate">{file.name}</span>
-          <button type="button" onClick={clearFile} className="rounded p-1 hover:bg-gray-100" aria-label="Remove selected file">
+          <button type="button" onClick={clearFile} className="rounded p-1 hover:bg-white/10" aria-label="Remove selected file">
             <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
       {progress > 0 && (
-        <div className="mt-3 h-2 overflow-hidden rounded bg-gray-200">
-          <div className="h-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
+        <div className="mt-3 h-2 overflow-hidden rounded bg-white/10">
+          <div className="h-full bg-gradient-to-r from-red-500 to-sky-300 transition-all" style={{ width: `${progress}%` }} />
         </div>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-300">{error}</p>}
 
       <button
         type="button"
         disabled={!file || disabled || isUploading}
         onClick={handleUpload}
-        className="mt-4 inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-4 inline-flex items-center gap-2 rounded-premium bg-gradient-to-r from-red-600 to-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <UploadCloud className="h-4 w-4" />
         {isUploading ? "Uploading" : "Upload"}

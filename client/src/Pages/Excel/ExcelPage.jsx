@@ -491,8 +491,8 @@ export default function ExcelPage() {
     const headers = Object.keys(first);
 
     return (
-      <div className="overflow-x-auto max-h-[420px] border rounded bg-white">
-        <table className="min-w-full text-sm table-auto border-collapse">
+      <div className="overflow-x-auto max-h-[420px] rounded-premium border border-white/10 bg-black/25">
+        <table className="premium-table min-w-full table-auto">
           <thead className="sticky top-0 bg-gray-900 text-white">
             <tr>
               {headers.map((h) => (
@@ -502,9 +502,9 @@ export default function ExcelPage() {
           </thead>
           <tbody>
             {dataRows.map((r, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+              <tr key={i} className={i % 2 === 0 ? "bg-white/[0.035]" : "bg-transparent"}>
                 {headers.map((h) => (
-                  <td key={h} className="px-3 py-2 border text-gray-700">{String(r[h] ?? "")}</td>
+                  <td key={h}>{String(r[h] ?? "")}</td>
                 ))}
               </tr>
             ))}
@@ -522,7 +522,7 @@ export default function ExcelPage() {
           <button
             key={s.name + idx}
             onClick={() => setSelectedSheetIndex(idx)}
-            className={`px-3 py-1 rounded ${idx === selectedSheetIndex ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-800"}`}
+            className={`px-3 py-1 rounded-premium ${idx === selectedSheetIndex ? "bg-sky-500 text-white" : "bg-white/10 text-slate-200"}`}
           >
             {s.name} ({(s.rows || []).length})
           </button>
@@ -580,17 +580,17 @@ export default function ExcelPage() {
       )}
     </div> */}
 
-      <div className="p-6">
+      <div className="min-h-screen bg-premium-black p-4 text-white sm:p-6">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* header */}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold">Excel Upload → History → Analyze</h1>
-              <p className="text-sm text-gray-600 mt-1">Upload .xls/.xlsx/.csv files, preview sheets, choose columns and build charts.</p>
+              <p className="text-sm text-secondary mt-1">Upload .xls/.xlsx/.csv files, preview sheets, choose columns and build charts.</p>
             </div>
 
             <div className="flex gap-3">
-              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded cursor-pointer">
+              <label className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-sky-500 text-white rounded-premium cursor-pointer shadow-glow-red">
                 <FiUpload /> Upload
                 <input type="file" accept=".xlsx,.xls,.csv" onChange={handleUpload} className="hidden" />
               </label>
@@ -599,7 +599,7 @@ export default function ExcelPage() {
                 <FiClock /> Refresh
               </button> */}
 
-              <button onClick={toggleHistory} className="px-4 py-2 bg-green-600 text-white rounded flex items-center gap-2">
+              <button onClick={toggleHistory} className="px-4 py-2 bg-white/10 text-white rounded-premium flex items-center gap-2 hover:bg-white/15">
                 <FiClock /> History
               </button>
             </div>
@@ -646,10 +646,10 @@ export default function ExcelPage() {
         {showHistory && (
           <section ref={historyRef} className="grid md:grid-cols-2 gap-4 mb-6">
             {files.length ? files.map((f) => (
-              <div key={f._id} className="p-4 bg-white rounded shadow-sm flex items-center justify-between gap-4">
+              <div key={f._id} className="p-4 glass-card flex items-center justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-800 truncate">{f.filename}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-primary truncate">{f.filename}</p>
+                  <p className="text-xs text-secondary">
                     {f.uploadedAt ? new Date(f.uploadedAt).toLocaleString() : "N/A"}{f.size ? ` • ${(f.size / 1024).toFixed(2)} KB` : ""}
                   </p>
                 </div>
@@ -660,14 +660,14 @@ export default function ExcelPage() {
                   <button onClick={() => handleDelete(f._id)} title="Delete" className="p-2 bg-red-100 rounded text-red-600"><FiTrash2 /></button>
                 </div>
               </div>
-            )) : <div className="col-span-full p-6 bg-white rounded text-center text-gray-500">No uploads yet.</div>}
+            )) : <div className="col-span-full p-6 glass-card text-center text-secondary">No uploads yet.</div>}
           </section>
         )}
 
           {/* preview + builder */}
-          <section className="bg-white rounded p-4 shadow">
+          <section className="glass-card p-4">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 ">
-              <h2 className="text-lg text-black font-medium">{analyzeOpen ? "Chart Builder" : selectedFileId ? "Preview" : "Select a file"}</h2>
+              <h2 className="text-lg text-primary font-medium">{analyzeOpen ? "Chart Builder" : selectedFileId ? "Preview" : "Select a file"}</h2>
 
               <div className="flex items-center gap-3 text-grey-500">
                 {selectedFileId && (

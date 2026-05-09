@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xlblog-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: xlblog-worker
+  template:
+    metadata:
+      labels:
+        app: xlblog-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/your-org/xlblog-worker:latest
+          command: ["node", "src/workers/index.js"]
+          envFrom:
+            - secretRef:
+                name: xlblog-api-secrets
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 4Gi

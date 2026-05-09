@@ -861,6 +861,8 @@ import { motion } from "framer-motion";
 import { AiOutlineDelete, AiOutlineEdit, AiOutlineEye } from "react-icons/ai";
 import api from "../../Helper/axiosInstance";
 import { Link } from "react-router-dom";
+import { Award, BookOpen, BrainCircuit, Flame } from "lucide-react";
+import { CinematicPage, StatCard } from "../../Components/Premium/PremiumShell";
 
 const TAG_OPTIONS = ["Development", "React", "Node", "Design", "Product", "Tutorial"];
 
@@ -1167,11 +1169,17 @@ const UserDashboard = () => {
 
   return (
     <Layout>
-      <div className="min-h-[90vh] p-6 text-white">
+      <CinematicPage className="p-4 sm:p-6 lg:p-10">
         <div className="max-w-7xl mx-auto">
+          <div className="mb-6 grid gap-4 md:grid-cols-4">
+            <StatCard icon={BookOpen} label="Learning library" value={blogsData.length || 0} />
+            <StatCard icon={Flame} label="Study streak" value="7d" accent="text-red-200" />
+            <StatCard icon={Award} label="Leaderboard" value="Top 10" accent="text-yellow-200" />
+            <StatCard icon={BrainCircuit} label="AI coach" value="Ready" accent="text-fuchsia-200" />
+          </div>
           <div className="flex flex-col md:flex-row gap-6">
-            <aside className="w-full md:w-64 bg-white/5 rounded-xl p-4 space-y-4">
-              <h2 className="text-lg font-semibold">Blog Dashboard</h2>
+            <aside className="w-full md:w-64 glass-card p-4 space-y-4">
+              <h2 className="text-lg font-semibold">Student Studio</h2>
               <nav className="flex flex-col gap-2">
                 <button className="text-left px-3 py-2 rounded hover:bg-white/10">🏠 Overview</button>
                 <button onClick={() => navigate("/blog/create")} className="px-3 py-1 rounded-md bg-yellow-500 text-black font-semibold">Create Blog</button>
@@ -1361,7 +1369,7 @@ const UserDashboard = () => {
             </main>
           </div>
         </div>
-      </div>
+      </CinematicPage>
     </Layout>
   );
 };

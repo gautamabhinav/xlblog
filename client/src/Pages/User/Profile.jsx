@@ -6,6 +6,8 @@ import { getUserData } from "../../Redux/authSlice";
 import { motion } from "framer-motion";
 import { FiEdit2, FiLock, FiMail, FiUser } from "react-icons/fi";
 import toast from "react-hot-toast";
+import { Award, CalendarDays, Clapperboard, Flame } from "lucide-react";
+import { CinematicPage, GlassPanel, PremiumButton, StatCard } from "../../Components/Premium/PremiumShell";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -55,13 +57,14 @@ const Profile = () => {
 
   return (
     <Layout>
-      <div className="min-h-[90vh] flex items-center justify-center p-6">
+      <CinematicPage className="p-4 sm:p-6 lg:p-10">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="w-full max-w-3xl bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl p-6 shadow-2xl text-white"
+          className="mx-auto w-full max-w-6xl"
         >
+          <GlassPanel className="overflow-hidden p-5 md:p-8">
           <div className="flex flex-col md:flex-row gap-6 items-center">
             <div className="flex-shrink-0">
               {loading ? (
@@ -73,7 +76,7 @@ const Profile = () => {
                   className="w-36 h-36 rounded-full object-cover border-4 border-zinc-800 shadow-inner"
                 />
               ) : (
-                <div className="w-36 h-36 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold text-2xl">
+                <div className="w-36 h-36 rounded-full bg-gradient-to-br from-red-500 to-sky-400 flex items-center justify-center text-white font-bold text-2xl shadow-glow-red">
                   {userData?.fullName ? userData.fullName.charAt(0).toUpperCase() : "U"}
                 </div>
               )}
@@ -87,14 +90,14 @@ const Profile = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={handleEditProfile} className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-black px-3 py-2 rounded-md font-semibold">
+                  <button onClick={handleEditProfile} className="flex items-center gap-2 rounded-premium bg-gradient-to-r from-red-600 to-sky-500 px-3 py-2 font-semibold text-white shadow-glow-red">
                     <FiEdit2 /> Edit
                   </button>
                 </div>
               </div>
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-zinc-800/60 p-4 rounded-md">
+                <div className="bg-white/[0.06] border border-white/10 p-4 rounded-premium">
                   <div className="flex items-center gap-3">
                     <FiMail className="text-yellow-400" />
                     <div>
@@ -104,7 +107,7 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="bg-zinc-800/60 p-4 rounded-md">
+                <div className="bg-white/[0.06] border border-white/10 p-4 rounded-premium">
                   <div className="flex items-center gap-3">
                     <FiUser className="text-yellow-400" />
                     <div>
@@ -114,7 +117,7 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="bg-zinc-800/60 p-4 rounded-md">
+                <div className="bg-white/[0.06] border border-white/10 p-4 rounded-premium">
                   <div className="flex items-center gap-3">
                     <FiLock className="text-yellow-400" />
                     <div>
@@ -124,7 +127,7 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="bg-zinc-800/60 p-4 rounded-md">
+                <div className="bg-white/[0.06] border border-white/10 p-4 rounded-premium">
                   <div className="flex items-center gap-3">
                     <div className="text-yellow-400 text-xl">⭐</div>
                     <div>
@@ -136,35 +139,43 @@ const Profile = () => {
               </div>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                <button onClick={handleChangePassword} className="flex-1 bg-transparent border border-yellow-500 text-yellow-500 hover:bg-yellow-500 hover:text-black px-4 py-2 rounded-md font-semibold">
+                <button onClick={handleChangePassword} className="flex-1 rounded-premium border border-white/15 bg-white/5 px-4 py-2 font-semibold text-white hover:bg-white/10">
                   Change Password
                 </button>
 
-                <button onClick={handleEditProfile} className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-md font-semibold">
+                <button onClick={handleEditProfile} className="flex-1 rounded-premium bg-gradient-to-r from-red-600 to-sky-500 px-4 py-2 font-semibold text-white shadow-glow-red">
                   Edit Profile
                 </button>
 
                 {/* History / All Users Data button depending on role */}
                 {userData?.role === 'superadmin' ? (
-                  <button onClick={() => navigate('/admin/dashboard-full')} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-semibold">
+                  <button onClick={() => navigate('/admin/dashboard-full')} className="flex-1 rounded-premium bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-500">
                     All Users Data
                   </button>
                 ) : (
-                  <button onClick={() => navigate('/user/dashboard-full')} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-semibold">
+                  <button onClick={() => navigate('/user/dashboard-full')} className="flex-1 rounded-premium bg-sky-600 px-4 py-2 font-semibold text-white hover:bg-sky-500">
                     History
                   </button>
                 )}
 
                 {userData?.subscription?.status === "active" && (
-                  <button onClick={handleCancelSubscription} disabled={cancelling} className="flex-1 bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-md font-semibold">
+                  <button onClick={handleCancelSubscription} disabled={cancelling} className="flex-1 rounded-premium bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500">
                     {cancelling ? "Cancelling..." : "Cancel Subscription"}
                   </button>
                 )}
               </div>
             </div>
           </div>
+          </GlassPanel>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-4">
+            <StatCard icon={Clapperboard} label="Watch history" value="Ready" />
+            <StatCard icon={Flame} label="Learning streak" value="7d" accent="text-red-200" />
+            <StatCard icon={Award} label="Badges" value="12" accent="text-yellow-200" />
+            <StatCard icon={CalendarDays} label="Planner" value="Today" accent="text-emerald-200" />
+          </div>
         </motion.div>
-      </div>
+      </CinematicPage>
     </Layout>
   );
 };

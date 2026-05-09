@@ -3,6 +3,8 @@ import { createClient } from "redis";
 import RedisStore from "rate-limit-redis";
 
 const createRedisStore = () => {
+  if (!process.env.REDIS_URL || process.env.REDIS_RATE_LIMIT_ENABLED !== "true") return undefined;
+
   const client = createClient({
     url: process.env.REDIS_URL,
     socket: {
@@ -10,7 +12,13 @@ const createRedisStore = () => {
     },
   });
 
-  client.connect();
+  client.on("error", (error) => {
+    if (process.env.NODE_ENV !== "test") {
+      console.warn("Redis rate-limit store unavailable, using memory fallback", error.message);
+    }
+  });
+
+  client.connect().catch(() => {});
 
   return new RedisStore({
     sendCommand: (...args) => client.sendCommand(args),
@@ -20,7 +28,7 @@ const createRedisStore = () => {
 // helper → NEW STORE EVERY TIME
 const withStore = (options) => {
   const store = createRedisStore();
-  return rateLimit({ ...options, store });
+  return rateLimit(store ? { ...options, store } : options);
 };
 
 const base = {

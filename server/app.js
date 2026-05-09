@@ -343,6 +343,8 @@ import { corsOriginDelegate } from "./src/configs/cors.config.js";
 import { UPLOAD_ROOT } from "./src/configs/multer.config.js";
 import { multerErrorHandler } from "./src/middlewares/multer.middleware.js";
 import { requestLogger } from "./src/utils/logger.js";
+import { ipLimiter } from "./src/middlewares/rateLimiter.middleware.js";
+import { requestContext, securityHeaders } from "./src/middlewares/platform/security.middleware.js";
 
 // import session from "express-session";
 import MongoStore from "connect-mongo";
@@ -369,6 +371,9 @@ if (process.env.NODE_ENV === "test") {
 
 
 app.set('trust proxy', 1);
+app.use(requestContext);
+app.use(securityHeaders);
+app.use(ipLimiter);
 
 app.use(
   cors({
@@ -396,23 +401,26 @@ app.use("/uploads", express.static(UPLOAD_ROOT));
 // );
 
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI, // your MongoDB connection string
-      collectionName: "sessions",
-    }),
-    cookie: {
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    },
-  })
-);
+const sessionOptions = {
+  secret: process.env.SESSION_SECRET || process.env.JWT_SECRET || "local-session-secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000,
+  },
+};
+
+if (process.env.NODE_ENV === "production" || process.env.SESSION_STORE === "mongo") {
+  sessionOptions.store = MongoStore.create({
+    mongoUrl: process.env.MONGO_URI,
+    collectionName: "sessions",
+  });
+}
+
+app.use(session(sessionOptions));
 
 
 // File path setup (ESM-safe __dirname)
@@ -428,6 +436,8 @@ import userRoutes from "./src/routes/user.routes.js";
 import adminRoutes from "./src/routes/admin.routes.js";
 import adminDynamicRoutes from './src/routes/admin.dynamic.routes.js';
 import blogRoutes from "./src/routes/blog.routes.js";
+import paymentRoutes from "./src/routes/payment.routes.js";
+import courseRoutes from "./src/routes/course.routes.js";
 import categoryRoutes from "./src/routes/category.routes.js";
 import blogLikeRoute from "./src/routes/like.routes.js";
 import contactRoute from "./src/routes/contact.routes.js";
@@ -438,11 +448,16 @@ import commentRoutes from "./src/routes/comment.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
 import testRoutes from "./src/routes/test.routes.js";
 import fileRoutes from "./src/routes/file.routes.js";
+import videoRoutes from "./src/routes/platform/video.routes.js";
+import voiceRoutes from "./src/routes/platform/voice.routes.js";
+import platformRoutes from "./src/routes/platform/platform.routes.js";
 import session from "express-session";
 
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use('/api/v1/admin', adminDynamicRoutes);
+app.use('/api/v1/courses', courseRoutes);
+app.use('/api/v1/payments', paymentRoutes);
 app.use("/api/v1/posts", blogRoutes);
 app.use("/api/v1/comment", commentRoutes);
 app.use("/api/v1/excel", excelRoutes);
@@ -454,6 +469,9 @@ app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/likes", blogLikeRoute);
 app.use("/api/v1/tests", testRoutes);
 app.use("/api/v1/files", fileRoutes);
+app.use("/api/v1/videos", videoRoutes);
+app.use("/api/v1/voice", voiceRoutes);
+app.use("/api/v1/platform", platformRoutes);
 
 // ---------------- Frontend (Production) ----------------
 if (process.env.NODE_ENV === "production") {

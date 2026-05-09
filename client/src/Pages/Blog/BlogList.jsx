@@ -135,6 +135,191 @@ const BlogList = () => {
       </div>
     </Layout>
   );
+
+//   return (
+//   <Layout>
+//     <div className="min-h-screen bg-black text-white px-4 md:px-12 pt-6">
+
+//       {/* 🔥 HERO SECTION */}
+//       {!loading && filtered[0] && (
+//         <div className="relative w-full h-[55vh] rounded-xl overflow-hidden mb-10">
+//           <img
+//             src={filtered[0]?.thumbnail}
+//             alt=""
+//             className="w-full h-full object-cover"
+//           />
+
+//           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent flex flex-col justify-end p-6">
+//             <h1 className="text-4xl font-bold">{filtered[0]?.title}</h1>
+//             <p className="text-gray-300 max-w-xl mt-2 line-clamp-2">
+//               {filtered[0]?.content}
+//             </p>
+
+//             <button
+//               onClick={() => navigate(`/blog/${filtered[0]?._id}`)}
+//               className="mt-4 w-fit bg-yellow-500 hover:bg-yellow-600 px-5 py-2 rounded-md font-semibold"
+//             >
+//               Read Now
+//             </button>
+//           </div>
+//         </div>
+//       )}
+
+//       {/* 🔍 TOP BAR */}
+//       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+
+//         <h1 className="text-2xl font-semibold">
+//           Explore Blogs by{" "}
+//           <span className="text-yellow-500 font-bold">Experts</span>
+//         </h1>
+
+//         <div className="flex items-center gap-3 w-full md:w-auto">
+
+//           {/* search */}
+//           <div className="relative w-full md:w-72">
+//             <HiOutlineSearch className="absolute left-3 top-3 text-gray-400" />
+//             <input
+//               value={query}
+//               onChange={(e) => setQuery(e.target.value)}
+//               placeholder="Search..."
+//               className="pl-10 pr-3 py-2 w-full bg-zinc-900 rounded-md border border-zinc-700 focus:ring-2 focus:ring-yellow-500"
+//             />
+//           </div>
+
+//           {/* category */}
+//           <select
+//             value={category}
+//             onChange={(e) => setCategory(e.target.value)}
+//             className="bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2"
+//           >
+//             {categories.map((c) => (
+//               <option key={c || "all"} value={c}>
+//                 {c || "All"}
+//               </option>
+//             ))}
+//           </select>
+
+//           {/* sort */}
+//           <select
+//             value={sort}
+//             onChange={(e) => setSort(e.target.value)}
+//             className="bg-zinc-900 border border-zinc-700 rounded-md px-3 py-2"
+//           >
+//             <option value="newest">Newest</option>
+//             <option value="oldest">Oldest</option>
+//           </select>
+//         </div>
+//       </div>
+
+//       {/* ⏳ LOADING */}
+//       {loading ? (
+//         <div className="flex gap-4 overflow-x-auto">
+//           {Array.from({ length: 6 }).map((_, i) => (
+//             <div key={i} className="min-w-[220px] h-[300px] bg-zinc-800 animate-pulse rounded-lg"></div>
+//           ))}
+//         </div>
+//       ) : filtered.length === 0 ? (
+
+//         /* ❌ EMPTY STATE */
+//         <div className="flex flex-col items-center justify-center gap-4 mt-20">
+//           <p className="text-xl">No blogs found.</p>
+//           <p className="text-gray-400 text-center max-w-md">
+//             Try different search or create a new blog.
+//           </p>
+
+//           <div className="flex gap-3">
+//             <button
+//               onClick={() =>
+//                 navigate("/blog/create", {
+//                   state: { initialBlogData: { newBlog: true } },
+//                 })
+//               }
+//               className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-md font-semibold"
+//             >
+//               Create Blog
+//             </button>
+
+//             <button
+//               onClick={() => {
+//                 setQuery("");
+//                 setCategory("");
+//               }}
+//               className="px-4 py-2 border border-zinc-600 rounded-md"
+//             >
+//               Reset
+//             </button>
+//           </div>
+//         </div>
+
+//       ) : (
+//         <>
+//           {/* 🔥 TRENDING ROW */}
+//           <div className="mb-10">
+//             <h2 className="text-xl font-semibold mb-4">Trending</h2>
+
+//             <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+//               {filtered.slice(0, 10).map((element) => (
+//                 <div
+//                   key={element._id}
+//                   onClick={() => navigate(`/blog/${element._id}`)}
+//                   className="min-w-[220px] h-[300px] relative cursor-pointer transform hover:scale-105 transition duration-300"
+//                 >
+//                   <img
+//                     src={element.thumbnail}
+//                     alt=""
+//                     className="w-full h-full object-cover rounded-lg"
+//                   />
+
+//                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-3 flex flex-col justify-end rounded-lg">
+//                     <h3 className="text-sm font-semibold line-clamp-2">
+//                       {element.title}
+//                     </h3>
+//                     <p className="text-xs text-gray-300">
+//                       {element.author}
+//                     </p>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+
+//           {/* 🆕 LATEST ROW */}
+//           <div className="mb-10">
+//             <h2 className="text-xl font-semibold mb-4">Latest</h2>
+
+//             <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+//               {[...filtered].reverse().slice(0, 10).map((element) => (
+//                 <div
+//                   key={element._id}
+//                   onClick={() => navigate(`/blog/${element._id}`)}
+//                   className="min-w-[220px] h-[300px] relative cursor-pointer transform hover:scale-105 transition duration-300"
+//                 >
+//                   <img
+//                     src={element.thumbnail}
+//                     alt=""
+//                     className="w-full h-full object-cover rounded-lg"
+//                   />
+
+//                   <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent p-3 flex flex-col justify-end rounded-lg">
+//                     <h3 className="text-sm font-semibold line-clamp-2">
+//                       {element.title}
+//                     </h3>
+//                     <p className="text-xs text-gray-300">
+//                       {element.author}
+//                     </p>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+//         </>
+//       )}
+//     </div>
+//   </Layout>
+// );
+
+
+
 };
 
 export default BlogList;

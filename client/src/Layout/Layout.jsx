@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FiHome, FiBook, FiPhone, FiInfo, FiUser, FiFileText } from "react-icons/fi";
+import { FiHome, FiBook, FiPhone, FiInfo, FiUser, FiFileText, FiMonitor } from "react-icons/fi";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AiOutlineLogout, AiOutlineSearch } from "react-icons/ai";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,10 +8,12 @@ import UserAvatar from '../Components/Common/UserAvatar';
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../Redux/authSlice";
 import { BsMoon, BsSun } from "react-icons/bs";
+import { FiBookOpen } from "react-icons/fi";
 import { FaChartSimple } from "react-icons/fa6";
 import toast, { Toaster } from "react-hot-toast";
 import { fetchNotifications, markNotificationRead } from '../Redux/notificationSlice';
 import { connectSocket, disconnectSocket } from '../Redux/socketSlice';
+import MobileBottomNav from "../Components/Premium/MobileBottomNav";
 
 const Layout = ({ children }) => {
   const dispatch = useDispatch();
@@ -189,7 +191,8 @@ const Layout = ({ children }) => {
           desc: "Upload & manage Excel files",
         },
 
-  // { name: "Test Take", path: "/tests/take", icon: <FiBook />, desc: "Take a test" },
+  { name: "All Courses", path: "/courses", icon: <FiBookOpen />, desc: "Take a course" },
+  { name: "OTT Stream", path: "/ott", icon: <FiMonitor />, desc: "Premium video learning" },
   // { name: "Test Result", path: "/tests/result", icon: <FiBook />, desc: "View test results" },
   { name: "All Tests", path: "/tests", icon: <FiBook />, desc: "View tests" },
   
@@ -211,9 +214,9 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-premium-black text-white">
       {/* Header */}
-      <header className="bg-gradient-to-r from-indigo-600 to-purple-600 p-3 md:p-4 flex items-center justify-between text-white shadow-md">
+      <header className="sticky top-0 z-50 mx-3 mt-3 rounded-[18px] border border-white/10 bg-black/60 p-3 text-white shadow-premium backdrop-blur-2xl md:mx-5 md:mt-5 md:p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Animated hamburger button */}
           <button
@@ -231,8 +234,8 @@ const Layout = ({ children }) => {
             />
           </button>
 
-          <Link to="/" className="text-lg font-bold tracking-wide hover:opacity-90">
-            Test Platform
+          <Link to="/" className="text-lg font-black tracking-tight hover:opacity-90">
+            XL<span className="text-red-500">Stream</span>
           </Link>
         </div>
 
@@ -248,25 +251,42 @@ const Layout = ({ children }) => {
               className="pl-10 pr-4 py-2 w-full rounded-full bg-white/10 placeholder:text-gray-200 focus:outline-none focus:ring-2 focus:ring-yellow-400"
             />
           </div>
-          <button type="submit" className="bg-yellow-400 text-black px-4 py-2 rounded-full font-semibold">Search</button>
+          <button type="submit" className="bg-gradient-to-r from-red-600 to-sky-500 text-white px-4 py-2 rounded-full font-semibold shadow-glow-red">Search</button>
         </form>
 
         <div className="flex items-center gap-3">
           {/* quick link to Tests - visible on md+ screens */}
-          <Link to="/tests" className="hidden md:inline-flex items-center gap-2 px-3 py-1 rounded-md bg-white/10 hover:bg-white/20 transition text-white">
+          <Link to="/ott" className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-premium bg-red-600/90 hover:bg-red-500 transition text-white font-bold shadow-glow-red">
+            <FiMonitor />
+            <span className="hidden sm:inline">Stream</span>
+          </Link>
+
+          <Link to="/tests" className="hidden md:inline-flex items-center gap-2 px-3 py-2 rounded-premium bg-white/10 hover:bg-white/20 transition text-white">
             <FiBook />
             <span className="hidden sm:inline">Tests</span>
           </Link>
 
-          {/* admin quick-create test buttons */}
+          {/* admin quick-create dropdown */}
           {isLoggedIn && (role === "ADMIN" || role === "SUPERADMIN") && (
-            <div className="hidden md:inline-flex items-center gap-2">
-              <Link to="/tests/create" className="items-center gap-2 px-3 py-1 rounded-md bg-yellow-400 text-black font-semibold hover:opacity-90 transition">
-                Create Test
-              </Link>
-              <Link to="/tests/upload-pdf" className="items-center gap-2 px-3 py-1 rounded-md bg-white/10 text-white font-semibold hover:opacity-90 transition">
-                Create Test (PDF)
-              </Link>
+            <div className="relative hidden md:inline-flex items-center">
+              <details className="relative">
+                <summary className="list-none cursor-pointer flex items-center gap-2 px-3 py-1 rounded-md bg-yellow-400 text-black font-semibold hover:opacity-90 transition">
+                  Create
+                </summary>
+                <div className="absolute right-0 mt-2 w-56 bg-slate-950 border border-white/10 rounded-premium shadow-premium z-50 text-slate-100 py-2">
+                  <Link to="/blog/create" className="block px-3 py-2 hover:bg-gray-100">Create Post</Link>
+                  <Link
+                    to="/course/create"
+                    state={{ initialCourseData: { newCourse: true, title: "", category: "", createdBy: "", description: "", thumbnail: undefined, previewImage: "" } }}
+                    className="block px-3 py-2 hover:bg-gray-100"
+                  >
+                    Create Course
+                  </Link>
+                  <Link to="/tests/create" className="block px-3 py-2 hover:bg-gray-100">Create Test</Link>
+                  <Link to="/tests/upload-pdf" className="block px-3 py-2 hover:bg-gray-100">Create Test (PDF)</Link>
+                  <Link to="/admin/dashboard" className="block px-3 py-2 hover:bg-gray-100">Create / Manage Lectures</Link>
+                </div>
+              </details>
             </div>
           )}
 
@@ -284,7 +304,7 @@ const Layout = ({ children }) => {
             </button>
 
             {showNotif && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg z-50 text-gray-800 p-2">
+              <div className="absolute right-0 mt-2 w-80 bg-slate-950 border border-white/10 rounded-premium shadow-premium z-50 text-slate-100 p-2">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold">Notifications</div>
                   <button className="text-sm text-gray-500" onClick={() => dispatch(fetchNotifications())}>Refresh</button>
@@ -331,7 +351,7 @@ const Layout = ({ children }) => {
             )}
 
             {showUserMenu && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="absolute right-0 mt-2 w-44 bg-white rounded-md shadow-lg text-gray-800 py-2 overflow-hidden z-50">
+              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="absolute right-0 mt-2 w-44 bg-slate-950 border border-white/10 rounded-premium shadow-premium text-slate-100 py-2 overflow-hidden z-50">
                 <Link to="/user/profile" onClick={() => setShowUserMenu(false)} className="block px-3 py-2 hover:bg-gray-100">Profile</Link>
                 {role === "ADMIN" && <Link to="/admin/dashboard" onClick={() => setShowUserMenu(false)} className="block px-3 py-2 hover:bg-gray-100">Admin</Link>}
                 <button onClick={(e) => { handleLogout(e); setShowUserMenu(false); }} className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"><AiOutlineLogout /> Logout</button>
@@ -347,10 +367,10 @@ const Layout = ({ children }) => {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsOpen(false)} className="fixed inset-0 bg-black/50 z-40" />
 
-            <motion.aside initial={{ x: -320 }} animate={{ x: 0 }} exit={{ x: -320 }} transition={{ type: "spring", stiffness: 120 }} className="fixed top-0 left-0 w-72 h-full bg-white/98 backdrop-blur-xl shadow-2xl z-50 p-6 flex flex-col">
+            <motion.aside initial={{ x: -320 }} animate={{ x: 0 }} exit={{ x: -320 }} transition={{ type: "spring", stiffness: 120 }} className="fixed top-0 left-0 w-72 h-full bg-slate-950/95 border-r border-white/10 backdrop-blur-xl shadow-premium z-50 p-6 flex flex-col">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-lg font-semibold text-gray-800">Navigation</h2>
-                <button onClick={() => setIsOpen(false)} className="text-gray-600 hover:text-gray-900">✕</button>
+                <h2 className="text-lg font-semibold text-white">Navigation</h2>
+                <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-white">✕</button>
               </div>
 
               <nav className="flex-1 overflow-auto">
@@ -360,13 +380,13 @@ const Layout = ({ children }) => {
                       <Link
                         to={item.path}
                         ref={idx === 0 ? firstLinkRef : null}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all ${location.pathname === item.path ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md" : "hover:bg-gray-100"}`}
+                        className={`flex items-center gap-3 p-3 rounded-premium transition-all ${location.pathname === item.path ? "bg-gradient-to-r from-red-600 to-sky-500 text-white shadow-glow-red" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}
                         onClick={() => setIsOpen(false)}
                       >
                         <div className="text-xl">{item.icon}</div>
                         <div className="flex-1">
                           <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-gray-500">{item.desc}</div>
+                          <div className="text-sm text-slate-500">{item.desc}</div>
                         </div>
                       </Link>
                     </li>
@@ -394,9 +414,10 @@ const Layout = ({ children }) => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1"> {children} </main>
+      <main className="flex-1 pb-20 md:pb-0"> {children} </main>
 
       <Footer />
+      <MobileBottomNav />
       {/* global toast container */}
       <Toaster position="top-right" />
     </div>

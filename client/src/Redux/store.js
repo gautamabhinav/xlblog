@@ -11,6 +11,9 @@ import commentSliceReducer from "../Redux/commentSlice";
 import likeSliceReducer from "../Redux/likeSlice";
 import notificationReducer from './notificationSlice';
 import testReducer from './testSlice';
+import courseSliceReducer from "../Redux/courseSlice";
+import lectureSliceReducer from "../Redux/lectureSlice";
+import razorpaySliceReducer from "./razorpaySlice";
 
 const store = configureStore({
   reducer: {
@@ -26,6 +29,9 @@ const store = configureStore({
     stat: statSliceReducer,
     ai: aiReducer, 
     tests: testReducer,
+    course: courseSliceReducer,
+    lecture: lectureSliceReducer,
+    razorpay: razorpaySliceReducer,
   },
 });
 

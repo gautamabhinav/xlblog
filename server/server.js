@@ -127,6 +127,35 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("✅ User connected:", socket.id);
 
+  socket.on("presence:join", ({ userId, room = "global" } = {}) => {
+    socket.join(`presence:${room}`);
+    socket.to(`presence:${room}`).emit("presence:online", { userId, socketId: socket.id, room });
+  });
+
+  socket.on("classroom:join", ({ classroomId } = {}) => {
+    if (!classroomId) return;
+    socket.join(`classroom:${classroomId}`);
+    socket.to(`classroom:${classroomId}`).emit("classroom:user-joined", { socketId: socket.id });
+  });
+
+  socket.on("quiz:join", ({ quizId } = {}) => {
+    if (quizId) socket.join(`quiz:${quizId}`);
+  });
+
+  socket.on("quiz:update", ({ quizId, payload } = {}) => {
+    if (!quizId) return;
+    io.to(`quiz:${quizId}`).emit("quiz:update", payload);
+  });
+
+  socket.on("typing", ({ room = "global", userId, isTyping = true } = {}) => {
+    socket.to(`presence:${room}`).emit("typing", { userId, isTyping });
+  });
+
+  socket.on("live:reaction", ({ classroomId, reaction } = {}) => {
+    if (!classroomId) return;
+    socket.to(`classroom:${classroomId}`).emit("live:reaction", { reaction, socketId: socket.id });
+  });
+
   socket.on("disconnect", () => {
     console.log("❌ User disconnected:", socket.id);
   });
@@ -136,9 +165,31 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ Start server + connect DB
-server.listen(port, async () => {
-  await connectToDB();
-  console.log(`🚀 Server running at port ${port}`);
-  console.log(`✅ Allowed Origins:`, allowedOrigins);
-});
+// ✅ Start server + connect DB with port retry on EADDRINUSE
+const MAX_PORT_RETRIES = 10;
+
+async function startServer(startPort, attemptsLeft = MAX_PORT_RETRIES) {
+  try {
+    server.listen(startPort, async () => {
+      await connectToDB();
+      console.log(`🚀 Server running at port ${startPort}`);
+      console.log(`✅ Allowed Origins:`, allowedOrigins);
+    });
+    server.on('error', async (err) => {
+      if (err.code === 'EADDRINUSE' && attemptsLeft > 0) {
+        console.warn(`Port ${startPort} in use, trying ${startPort + 1}...`);
+        // remove listeners before retrying
+        server.removeAllListeners('error');
+        await startServer(startPort + 1, attemptsLeft - 1);
+      } else {
+        console.error('Server failed to start:', err);
+        process.exit(1);
+      }
+    });
+  } catch (err) {
+    console.error('Failed to start server', err);
+    process.exit(1);
+  }
+}
+
+startServer(Number(port));
