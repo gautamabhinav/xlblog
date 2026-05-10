@@ -1,12 +1,266 @@
+// import { useMemo, useState } from "react";
+// import toast from "react-hot-toast";
+// import { useNavigate } from "react-router-dom";
+// import { Plus, Save, Trash2 } from "lucide-react";
+
+// import axiosInstance from "../../Helper/axiosInstance";
+// import Layout from "../../Layout/Layout";
+
+// const questionCounts = [10, 20, 50, 80, 100, 120, 150];
+// const durations = [
+//   { label: "1 min", value: 60 },
+//   { label: "2 min", value: 120 },
+//   { label: "5 min", value: 300 },
+//   { label: "10 min", value: 600 },
+//   { label: "20 min", value: 1200 },
+//   { label: "30 min", value: 1800 },
+//   { label: "1 hr", value: 3600 },
+//   { label: "2 hr", value: 7200 },
+//   { label: "2.5 hr", value: 9000 },
+// ];
+
+// const createQuestion = (optionsCount = 4, marks = 1) => ({
+//   text: "",
+//   topic: "General",
+//   difficulty: "MEDIUM",
+//   marks,
+//   options: Array.from({ length: optionsCount }, () => ({ text: "" })),
+//   correctAnswers: [0],
+// });
+
+// export default function TestCreate() {
+//   const navigate = useNavigate();
+//   const [config, setConfig] = useState({
+//     title: "",
+//     description: "",
+//     examPattern: "SSC",
+//     totalQuestions: 10,
+//     durationSeconds: 600,
+//     optionsCount: 4,
+//     marksPerQuestion: 1,
+//     negativeMarkingEnabled: true,
+//     penaltyRatio: 4,
+//     status: "PUBLISHED",
+//     fullscreenRequired: false,
+//     maxTabSwitches: 3,
+//     autoSubmitOnViolation: false,
+//   });
+//   const [questions, setQuestions] = useState([createQuestion(4, 1)]);
+//   const [saving, setSaving] = useState(false);
+
+//   const scoreFormula = useMemo(() => {
+//     if (!config.negativeMarkingEnabled) return "score = correct * marks";
+//     return `score = correct * ${config.marksPerQuestion} - (wrong / ${config.penaltyRatio})`;
+//   }, [config]);
+
+//   const updateConfig = (key, value) => {
+//     setConfig((prev) => {
+//       const next = { ...prev, [key]: value };
+//       if (key === "examPattern") {
+//         if (value === "SSC") next.penaltyRatio = 4;
+//         if (value === "UPSC") next.penaltyRatio = 3;
+//         if (value === "BPSC") next.negativeMarkingEnabled = false;
+//       }
+//       if (key === "optionsCount") {
+//         setQuestions((qs) =>
+//           qs.map((q) => ({
+//             ...q,
+//             options: Array.from({ length: Number(value) }, (_, i) => q.options[i] || { text: "" }),
+//             correctAnswers: q.correctAnswers.filter((idx) => idx < Number(value)).length
+//               ? q.correctAnswers.filter((idx) => idx < Number(value))
+//               : [0],
+//           }))
+//         );
+//       }
+//       if (key === "marksPerQuestion") {
+//         setQuestions((qs) => qs.map((q) => ({ ...q, marks: Number(value) })));
+//       }
+//       return next;
+//     });
+//   };
+
+//   const updateQuestion = (index, patch) => {
+//     setQuestions((qs) => qs.map((q, i) => (i === index ? { ...q, ...patch } : q)));
+//   };
+
+//   const updateOption = (questionIndex, optionIndex, text) => {
+//     setQuestions((qs) =>
+//       qs.map((q, qi) =>
+//         qi === questionIndex
+//           ? {
+//               ...q,
+//               options: q.options.map((option, oi) => (oi === optionIndex ? { text } : option)),
+//             }
+//           : q
+//       )
+//     );
+//   };
+
+//   const toggleCorrect = (questionIndex, optionIndex) => {
+//     setQuestions((qs) =>
+//       qs.map((q, qi) => {
+//         if (qi !== questionIndex) return q;
+//         const exists = q.correctAnswers.includes(optionIndex);
+//         const correctAnswers = exists
+//           ? q.correctAnswers.filter((idx) => idx !== optionIndex)
+//           : [...q.correctAnswers, optionIndex];
+//         return { ...q, correctAnswers: correctAnswers.length ? correctAnswers : [optionIndex] };
+//       })
+//     );
+//   };
+
+//   const submit = async (event) => {
+//     event.preventDefault();
+//     setSaving(true);
+//     try {
+//       const payload = {
+//         ...config,
+//         questions: questions.map((question) => ({
+//           ...question,
+//           options: question.options.map((option, index) => ({
+//             text: option.text,
+//             isCorrect: question.correctAnswers.includes(index),
+//           })),
+//         })),
+//       };
+//       await axiosInstance.post("/tests", payload);
+//       toast.success("Exam created successfully");
+//       navigate("/tests");
+//     } catch (error) {
+//       toast.error(error?.response?.data?.message || "Failed to create exam");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   return (
+//     <Layout>
+//       <form onSubmit={submit} className="mx-auto max-w-6xl space-y-6 p-6">
+//         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+//           <div>
+//             <h1 className="text-3xl font-bold">Manual Govt Exam Builder</h1>
+//             <p className="text-sm text-gray-500">{scoreFormula}</p>
+//           </div>
+//           <button disabled={saving} className="inline-flex items-center gap-2 rounded bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-60">
+//             <Save size={18} /> {saving ? "Saving" : "Create Exam"}
+//           </button>
+//         </div>
+
+//         <section className="grid gap-4 rounded-lg bg-white p-5 shadow md:grid-cols-4">
+//           <label className="md:col-span-2">
+//             <span className="text-sm font-medium">Title</span>
+//             <input value={config.title} onChange={(e) => updateConfig("title", e.target.value)} className="mt-1 w-full rounded border p-2" required />
+//           </label>
+//           <label>
+//             <span className="text-sm font-medium">Pattern</span>
+//             <select value={config.examPattern} onChange={(e) => updateConfig("examPattern", e.target.value)} className="mt-1 w-full rounded border p-2">
+//               {["SSC", "UPSC", "BPSC", "CUSTOM"].map((item) => <option key={item}>{item}</option>)}
+//             </select>
+//           </label>
+//           <label>
+//             <span className="text-sm font-medium">Questions</span>
+//             <select value={config.totalQuestions} onChange={(e) => updateConfig("totalQuestions", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
+//               {questionCounts.map((count) => <option key={count} value={count}>{count}</option>)}
+//             </select>
+//           </label>
+//           <label>
+//             <span className="text-sm font-medium">Duration</span>
+//             <select value={config.durationSeconds} onChange={(e) => updateConfig("durationSeconds", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
+//               {durations.map((duration) => <option key={duration.value} value={duration.value}>{duration.label}</option>)}
+//             </select>
+//           </label>
+//           <label>
+//             <span className="text-sm font-medium">Options</span>
+//             <select value={config.optionsCount} onChange={(e) => updateConfig("optionsCount", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
+//               <option value={4}>4 options</option>
+//               <option value={5}>5 options</option>
+//             </select>
+//           </label>
+//           <label>
+//             <span className="text-sm font-medium">Marks</span>
+//             <select value={config.marksPerQuestion} onChange={(e) => updateConfig("marksPerQuestion", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
+//               <option value={1}>1 mark</option>
+//               <option value={4}>4 marks</option>
+//             </select>
+//           </label>
+//           <label>
+//             <span className="text-sm font-medium">Penalty</span>
+//             <select value={config.negativeMarkingEnabled ? config.penaltyRatio : 0} onChange={(e) => {
+//               const ratio = Number(e.target.value);
+//               updateConfig("negativeMarkingEnabled", ratio > 0);
+//               updateConfig("penaltyRatio", ratio);
+//             }} className="mt-1 w-full rounded border p-2">
+//               <option value={4}>4 wrong = -1</option>
+//               <option value={3}>3 wrong = -1</option>
+//               <option value={0}>No negative</option>
+//             </select>
+//           </label>
+//           <label className="md:col-span-4">
+//             <span className="text-sm font-medium">Description</span>
+//             <textarea value={config.description} onChange={(e) => updateConfig("description", e.target.value)} className="mt-1 w-full rounded border p-2" rows={2} />
+//           </label>
+//         </section>
+
+//         <section className="space-y-4">
+//           {questions.map((question, qi) => (
+//             <div key={qi} className="rounded-lg bg-white p-5 shadow">
+//               <div className="mb-3 flex items-center justify-between">
+//                 <div className="font-semibold">Question {qi + 1}</div>
+//                 <button type="button" onClick={() => setQuestions((qs) => qs.filter((_, i) => i !== qi))} className="rounded p-2 text-red-600 hover:bg-red-50">
+//                   <Trash2 size={18} />
+//                 </button>
+//               </div>
+//               <textarea value={question.text} onChange={(e) => updateQuestion(qi, { text: e.target.value })} placeholder="Question text" className="mb-3 w-full rounded border p-2" required />
+//               <div className="mb-3 grid gap-3 md:grid-cols-3">
+//                 <input value={question.topic} onChange={(e) => updateQuestion(qi, { topic: e.target.value })} className="rounded border p-2" placeholder="Topic" />
+//                 <select value={question.difficulty} onChange={(e) => updateQuestion(qi, { difficulty: e.target.value })} className="rounded border p-2">
+//                   {["EASY", "MEDIUM", "HARD"].map((item) => <option key={item}>{item}</option>)}
+//                 </select>
+//                 <select value={question.marks} onChange={(e) => updateQuestion(qi, { marks: Number(e.target.value) })} className="rounded border p-2">
+//                   <option value={1}>1 mark</option>
+//                   <option value={4}>4 marks</option>
+//                 </select>
+//               </div>
+//               <div className="grid gap-2 md:grid-cols-2">
+//                 {question.options.map((option, oi) => (
+//                   <label key={oi} className="flex items-center gap-2 rounded border p-2">
+//                     <input type="checkbox" checked={question.correctAnswers.includes(oi)} onChange={() => toggleCorrect(qi, oi)} />
+//                     <span className="w-6 text-sm font-semibold">{String.fromCharCode(65 + oi)}</span>
+//                     <input value={option.text} onChange={(e) => updateOption(qi, oi, e.target.value)} className="flex-1 outline-none" placeholder={`Option ${oi + 1}`} required />
+//                   </label>
+//                 ))}
+//               </div>
+//             </div>
+//           ))}
+//         </section>
+
+//         <button type="button" onClick={() => setQuestions((qs) => [...qs, createQuestion(config.optionsCount, config.marksPerQuestion)])} className="inline-flex items-center gap-2 rounded bg-gray-200 px-4 py-2 font-semibold">
+//           <Plus size={18} /> Add Question
+//         </button>
+//       </form>
+//     </Layout>
+//   );
+// }
+
+
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { Plus, Save, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Save,
+  Trash2,
+  Clock3,
+  FileText,
+  Trophy,
+  ShieldCheck,
+} from "lucide-react";
 
 import axiosInstance from "../../Helper/axiosInstance";
 import Layout from "../../Layout/Layout";
 
 const questionCounts = [10, 20, 50, 80, 100, 120, 150];
+
 const durations = [
   { label: "1 min", value: 60 },
   { label: "2 min", value: 120 },
@@ -24,12 +278,15 @@ const createQuestion = (optionsCount = 4, marks = 1) => ({
   topic: "General",
   difficulty: "MEDIUM",
   marks,
-  options: Array.from({ length: optionsCount }, () => ({ text: "" })),
+  options: Array.from({ length: optionsCount }, () => ({
+    text: "",
+  })),
   correctAnswers: [0],
 });
 
 export default function TestCreate() {
   const navigate = useNavigate();
+
   const [config, setConfig] = useState({
     title: "",
     description: "",
@@ -45,89 +302,162 @@ export default function TestCreate() {
     maxTabSwitches: 3,
     autoSubmitOnViolation: false,
   });
-  const [questions, setQuestions] = useState([createQuestion(4, 1)]);
+
+  const [questions, setQuestions] = useState([
+    createQuestion(4, 1),
+  ]);
+
   const [saving, setSaving] = useState(false);
 
   const scoreFormula = useMemo(() => {
-    if (!config.negativeMarkingEnabled) return "score = correct * marks";
-    return `score = correct * ${config.marksPerQuestion} - (wrong / ${config.penaltyRatio})`;
+    if (!config.negativeMarkingEnabled) {
+      return "Score = Correct × Marks";
+    }
+
+    return `Score = Correct × ${config.marksPerQuestion} - Wrong / ${config.penaltyRatio}`;
   }, [config]);
 
   const updateConfig = (key, value) => {
     setConfig((prev) => {
       const next = { ...prev, [key]: value };
+
       if (key === "examPattern") {
-        if (value === "SSC") next.penaltyRatio = 4;
-        if (value === "UPSC") next.penaltyRatio = 3;
-        if (value === "BPSC") next.negativeMarkingEnabled = false;
+        if (value === "SSC") {
+          next.penaltyRatio = 4;
+          next.negativeMarkingEnabled = true;
+        }
+
+        if (value === "UPSC") {
+          next.penaltyRatio = 3;
+          next.negativeMarkingEnabled = true;
+        }
+
+        if (value === "BPSC") {
+          next.negativeMarkingEnabled = false;
+        }
       }
+
       if (key === "optionsCount") {
         setQuestions((qs) =>
           qs.map((q) => ({
             ...q,
-            options: Array.from({ length: Number(value) }, (_, i) => q.options[i] || { text: "" }),
-            correctAnswers: q.correctAnswers.filter((idx) => idx < Number(value)).length
-              ? q.correctAnswers.filter((idx) => idx < Number(value))
-              : [0],
+            options: Array.from(
+              { length: Number(value) },
+              (_, i) => q.options[i] || { text: "" }
+            ),
+            correctAnswers:
+              q.correctAnswers.filter(
+                (idx) => idx < Number(value)
+              ).length
+                ? q.correctAnswers.filter(
+                    (idx) => idx < Number(value)
+                  )
+                : [0],
           }))
         );
       }
+
       if (key === "marksPerQuestion") {
-        setQuestions((qs) => qs.map((q) => ({ ...q, marks: Number(value) })));
+        setQuestions((qs) =>
+          qs.map((q) => ({
+            ...q,
+            marks: Number(value),
+          }))
+        );
       }
+
       return next;
     });
   };
 
   const updateQuestion = (index, patch) => {
-    setQuestions((qs) => qs.map((q, i) => (i === index ? { ...q, ...patch } : q)));
+    setQuestions((qs) =>
+      qs.map((q, i) =>
+        i === index ? { ...q, ...patch } : q
+      )
+    );
   };
 
-  const updateOption = (questionIndex, optionIndex, text) => {
+  const updateOption = (
+    questionIndex,
+    optionIndex,
+    text
+  ) => {
     setQuestions((qs) =>
       qs.map((q, qi) =>
         qi === questionIndex
           ? {
               ...q,
-              options: q.options.map((option, oi) => (oi === optionIndex ? { text } : option)),
+              options: q.options.map((option, oi) =>
+                oi === optionIndex
+                  ? { text }
+                  : option
+              ),
             }
           : q
       )
     );
   };
 
-  const toggleCorrect = (questionIndex, optionIndex) => {
+  const toggleCorrect = (
+    questionIndex,
+    optionIndex
+  ) => {
     setQuestions((qs) =>
       qs.map((q, qi) => {
         if (qi !== questionIndex) return q;
-        const exists = q.correctAnswers.includes(optionIndex);
+
+        const exists =
+          q.correctAnswers.includes(optionIndex);
+
         const correctAnswers = exists
-          ? q.correctAnswers.filter((idx) => idx !== optionIndex)
+          ? q.correctAnswers.filter(
+              (idx) => idx !== optionIndex
+            )
           : [...q.correctAnswers, optionIndex];
-        return { ...q, correctAnswers: correctAnswers.length ? correctAnswers : [optionIndex] };
+
+        return {
+          ...q,
+          correctAnswers: correctAnswers.length
+            ? correctAnswers
+            : [optionIndex],
+        };
       })
     );
   };
 
   const submit = async (event) => {
     event.preventDefault();
+
     setSaving(true);
+
     try {
       const payload = {
         ...config,
         questions: questions.map((question) => ({
           ...question,
-          options: question.options.map((option, index) => ({
-            text: option.text,
-            isCorrect: question.correctAnswers.includes(index),
-          })),
+          options: question.options.map(
+            (option, index) => ({
+              text: option.text,
+              isCorrect:
+                question.correctAnswers.includes(index),
+            })
+          ),
         })),
       };
+
       await axiosInstance.post("/tests", payload);
+
       toast.success("Exam created successfully");
+
       navigate("/tests");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to create exam");
+      console.error(error);
+
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to create exam"
+      );
     } finally {
       setSaving(false);
     }
@@ -135,109 +465,442 @@ export default function TestCreate() {
 
   return (
     <Layout>
-      <form onSubmit={submit} className="mx-auto max-w-6xl space-y-6 p-6">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Manual Govt Exam Builder</h1>
-            <p className="text-sm text-gray-500">{scoreFormula}</p>
-          </div>
-          <button disabled={saving} className="inline-flex items-center gap-2 rounded bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-60">
-            <Save size={18} /> {saving ? "Saving" : "Create Exam"}
-          </button>
-        </div>
-
-        <section className="grid gap-4 rounded-lg bg-white p-5 shadow md:grid-cols-4">
-          <label className="md:col-span-2">
-            <span className="text-sm font-medium">Title</span>
-            <input value={config.title} onChange={(e) => updateConfig("title", e.target.value)} className="mt-1 w-full rounded border p-2" required />
-          </label>
-          <label>
-            <span className="text-sm font-medium">Pattern</span>
-            <select value={config.examPattern} onChange={(e) => updateConfig("examPattern", e.target.value)} className="mt-1 w-full rounded border p-2">
-              {["SSC", "UPSC", "BPSC", "CUSTOM"].map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
-          <label>
-            <span className="text-sm font-medium">Questions</span>
-            <select value={config.totalQuestions} onChange={(e) => updateConfig("totalQuestions", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
-              {questionCounts.map((count) => <option key={count} value={count}>{count}</option>)}
-            </select>
-          </label>
-          <label>
-            <span className="text-sm font-medium">Duration</span>
-            <select value={config.durationSeconds} onChange={(e) => updateConfig("durationSeconds", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
-              {durations.map((duration) => <option key={duration.value} value={duration.value}>{duration.label}</option>)}
-            </select>
-          </label>
-          <label>
-            <span className="text-sm font-medium">Options</span>
-            <select value={config.optionsCount} onChange={(e) => updateConfig("optionsCount", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
-              <option value={4}>4 options</option>
-              <option value={5}>5 options</option>
-            </select>
-          </label>
-          <label>
-            <span className="text-sm font-medium">Marks</span>
-            <select value={config.marksPerQuestion} onChange={(e) => updateConfig("marksPerQuestion", Number(e.target.value))} className="mt-1 w-full rounded border p-2">
-              <option value={1}>1 mark</option>
-              <option value={4}>4 marks</option>
-            </select>
-          </label>
-          <label>
-            <span className="text-sm font-medium">Penalty</span>
-            <select value={config.negativeMarkingEnabled ? config.penaltyRatio : 0} onChange={(e) => {
-              const ratio = Number(e.target.value);
-              updateConfig("negativeMarkingEnabled", ratio > 0);
-              updateConfig("penaltyRatio", ratio);
-            }} className="mt-1 w-full rounded border p-2">
-              <option value={4}>4 wrong = -1</option>
-              <option value={3}>3 wrong = -1</option>
-              <option value={0}>No negative</option>
-            </select>
-          </label>
-          <label className="md:col-span-4">
-            <span className="text-sm font-medium">Description</span>
-            <textarea value={config.description} onChange={(e) => updateConfig("description", e.target.value)} className="mt-1 w-full rounded border p-2" rows={2} />
-          </label>
-        </section>
-
-        <section className="space-y-4">
-          {questions.map((question, qi) => (
-            <div key={qi} className="rounded-lg bg-white p-5 shadow">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="font-semibold">Question {qi + 1}</div>
-                <button type="button" onClick={() => setQuestions((qs) => qs.filter((_, i) => i !== qi))} className="rounded p-2 text-red-600 hover:bg-red-50">
-                  <Trash2 size={18} />
-                </button>
+      <div className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-zinc-900 text-white px-4 py-8 md:px-8">
+        <form
+          onSubmit={submit}
+          className="mx-auto max-w-7xl space-y-8"
+        >
+          {/* Header */}
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-4 py-1 text-sm text-indigo-300 backdrop-blur-xl">
+                <ShieldCheck size={16} />
+                Premium Govt Exam Builder
               </div>
-              <textarea value={question.text} onChange={(e) => updateQuestion(qi, { text: e.target.value })} placeholder="Question text" className="mb-3 w-full rounded border p-2" required />
-              <div className="mb-3 grid gap-3 md:grid-cols-3">
-                <input value={question.topic} onChange={(e) => updateQuestion(qi, { topic: e.target.value })} className="rounded border p-2" placeholder="Topic" />
-                <select value={question.difficulty} onChange={(e) => updateQuestion(qi, { difficulty: e.target.value })} className="rounded border p-2">
-                  {["EASY", "MEDIUM", "HARD"].map((item) => <option key={item}>{item}</option>)}
-                </select>
-                <select value={question.marks} onChange={(e) => updateQuestion(qi, { marks: Number(e.target.value) })} className="rounded border p-2">
-                  <option value={1}>1 mark</option>
-                  <option value={4}>4 marks</option>
-                </select>
-              </div>
-              <div className="grid gap-2 md:grid-cols-2">
-                {question.options.map((option, oi) => (
-                  <label key={oi} className="flex items-center gap-2 rounded border p-2">
-                    <input type="checkbox" checked={question.correctAnswers.includes(oi)} onChange={() => toggleCorrect(qi, oi)} />
-                    <span className="w-6 text-sm font-semibold">{String.fromCharCode(65 + oi)}</span>
-                    <input value={option.text} onChange={(e) => updateOption(qi, oi, e.target.value)} className="flex-1 outline-none" placeholder={`Option ${oi + 1}`} required />
-                  </label>
-                ))}
+
+              <h1 className="mt-4 text-4xl font-black tracking-tight">
+                Create Premium Test
+              </h1>
+
+              <p className="mt-2 text-zinc-400">
+                Modern OTT-style exam creation panel
+              </p>
+
+              <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 backdrop-blur-xl">
+                <Trophy
+                  size={16}
+                  className="text-yellow-400"
+                />
+                {scoreFormula}
               </div>
             </div>
-          ))}
-        </section>
 
-        <button type="button" onClick={() => setQuestions((qs) => [...qs, createQuestion(config.optionsCount, config.marksPerQuestion)])} className="inline-flex items-center gap-2 rounded bg-gray-200 px-4 py-2 font-semibold">
-          <Plus size={18} /> Add Question
-        </button>
-      </form>
+            <button
+              disabled={saving}
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-4 font-semibold text-white shadow-2xl shadow-indigo-500/20 transition-all duration-300 hover:scale-[1.02] hover:from-indigo-500 hover:to-purple-500 disabled:opacity-60"
+            >
+              <Save
+                size={18}
+                className="transition-transform group-hover:rotate-6"
+              />
+
+              {saving ? "Creating..." : "Create Exam"}
+            </button>
+          </div>
+
+          {/* Config Section */}
+          <section className="grid gap-5 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl md:grid-cols-2 xl:grid-cols-4">
+            <label className="xl:col-span-2">
+              <span className="mb-2 block text-sm font-medium text-zinc-300">
+                Exam Title
+              </span>
+
+              <input
+                value={config.title}
+                onChange={(e) =>
+                  updateConfig(
+                    "title",
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                placeholder="Enter exam title"
+                required
+              />
+            </label>
+
+            <label>
+              <span className="mb-2 block text-sm font-medium text-zinc-300">
+                Exam Pattern
+              </span>
+
+              <select
+                value={config.examPattern}
+                onChange={(e) =>
+                  updateConfig(
+                    "examPattern",
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+              >
+                {[
+                  "SSC",
+                  "UPSC",
+                  "BPSC",
+                  "CUSTOM",
+                ].map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 block text-sm font-medium text-zinc-300">
+                Questions
+              </span>
+
+              <select
+                value={config.totalQuestions}
+                onChange={(e) =>
+                  updateConfig(
+                    "totalQuestions",
+                    Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+              >
+                {questionCounts.map((count) => (
+                  <option
+                    key={count}
+                    value={count}
+                  >
+                    {count}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <Clock3 size={15} />
+                Duration
+              </span>
+
+              <select
+                value={config.durationSeconds}
+                onChange={(e) =>
+                  updateConfig(
+                    "durationSeconds",
+                    Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+              >
+                {durations.map((duration) => (
+                  <option
+                    key={duration.value}
+                    value={duration.value}
+                  >
+                    {duration.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 block text-sm font-medium text-zinc-300">
+                Options Count
+              </span>
+
+              <select
+                value={config.optionsCount}
+                onChange={(e) =>
+                  updateConfig(
+                    "optionsCount",
+                    Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+              >
+                <option value={4}>
+                  4 Options
+                </option>
+
+                <option value={5}>
+                  5 Options
+                </option>
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 block text-sm font-medium text-zinc-300">
+                Marks Per Question
+              </span>
+
+              <select
+                value={config.marksPerQuestion}
+                onChange={(e) =>
+                  updateConfig(
+                    "marksPerQuestion",
+                    Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+              >
+                <option value={1}>1 Mark</option>
+                <option value={4}>4 Marks</option>
+              </select>
+            </label>
+
+            <label>
+              <span className="mb-2 block text-sm font-medium text-zinc-300">
+                Negative Marking
+              </span>
+
+              <select
+                value={
+                  config.negativeMarkingEnabled
+                    ? config.penaltyRatio
+                    : 0
+                }
+                onChange={(e) => {
+                  const ratio = Number(
+                    e.target.value
+                  );
+
+                  updateConfig(
+                    "negativeMarkingEnabled",
+                    ratio > 0
+                  );
+
+                  updateConfig(
+                    "penaltyRatio",
+                    ratio
+                  );
+                }}
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+              >
+                <option value={4}>
+                  4 Wrong = -1
+                </option>
+
+                <option value={3}>
+                  3 Wrong = -1
+                </option>
+
+                <option value={0}>
+                  No Negative
+                </option>
+              </select>
+            </label>
+
+            <label className="md:col-span-2 xl:col-span-4">
+              <span className="mb-2 flex items-center gap-2 text-sm font-medium text-zinc-300">
+                <FileText size={15} />
+                Description
+              </span>
+
+              <textarea
+                value={config.description}
+                onChange={(e) =>
+                  updateConfig(
+                    "description",
+                    e.target.value
+                  )
+                }
+                rows={4}
+                placeholder="Enter exam description..."
+                className="w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+              />
+            </label>
+          </section>
+
+          {/* Questions */}
+          <section className="space-y-6">
+            {questions.map((question, qi) => (
+              <div
+                key={qi}
+                className="group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-2xl transition-all duration-300 hover:border-indigo-500/30"
+              >
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-lg font-bold">
+                      {qi + 1}
+                    </div>
+
+                    <div>
+                      <h2 className="text-xl font-bold">
+                        Question {qi + 1}
+                      </h2>
+
+                      <p className="text-sm text-zinc-400">
+                        Configure question details
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuestions((qs) =>
+                        qs.filter(
+                          (_, i) => i !== qi
+                        )
+                      )
+                    }
+                    className="rounded-2xl border border-red-500/20 bg-red-500/10 p-3 text-red-400 transition-all hover:bg-red-500/20"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+
+                <textarea
+                  value={question.text}
+                  onChange={(e) =>
+                    updateQuestion(qi, {
+                      text: e.target.value,
+                    })
+                  }
+                  placeholder="Enter question..."
+                  className="mb-5 w-full rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-lg text-white outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  rows={4}
+                  required
+                />
+
+                <div className="mb-5 grid gap-4 md:grid-cols-3">
+                  <input
+                    value={question.topic}
+                    onChange={(e) =>
+                      updateQuestion(qi, {
+                        topic: e.target.value,
+                      })
+                    }
+                    className="rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+                    placeholder="Topic"
+                  />
+
+                  <select
+                    value={question.difficulty}
+                    onChange={(e) =>
+                      updateQuestion(qi, {
+                        difficulty:
+                          e.target.value,
+                      })
+                    }
+                    className="rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+                  >
+                    {[
+                      "EASY",
+                      "MEDIUM",
+                      "HARD",
+                    ].map((item) => (
+                      <option key={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={question.marks}
+                    onChange={(e) =>
+                      updateQuestion(qi, {
+                        marks: Number(
+                          e.target.value
+                        ),
+                      })
+                    }
+                    className="rounded-2xl border border-white/10 bg-zinc-900/70 p-4 text-white outline-none"
+                  >
+                    <option value={1}>
+                      1 Mark
+                    </option>
+
+                    <option value={4}>
+                      4 Marks
+                    </option>
+                  </select>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {question.options.map(
+                    (option, oi) => (
+                      <label
+                        key={oi}
+                        className={`group/option flex items-center gap-4 rounded-2xl border p-4 transition-all duration-300 ${
+                          question.correctAnswers.includes(
+                            oi
+                          )
+                            ? "border-green-500 bg-green-500/10"
+                            : "border-white/10 bg-zinc-900/60 hover:border-indigo-500/30"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={question.correctAnswers.includes(
+                            oi
+                          )}
+                          onChange={() =>
+                            toggleCorrect(
+                              qi,
+                              oi
+                            )
+                          }
+                          className="h-5 w-5 accent-indigo-500"
+                        />
+
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 font-bold text-white">
+                          {String.fromCharCode(
+                            65 + oi
+                          )}
+                        </div>
+
+                        <input
+                          value={option.text}
+                          onChange={(e) =>
+                            updateOption(
+                              qi,
+                              oi,
+                              e.target.value
+                            )
+                          }
+                          className="flex-1 bg-transparent text-white placeholder:text-zinc-500 outline-none"
+                          placeholder={`Option ${
+                            oi + 1
+                          }`}
+                          required
+                        />
+                      </label>
+                    )
+                  )}
+                </div>
+              </div>
+            ))}
+          </section>
+
+          {/* Add Question */}
+          <button
+            type="button"
+            onClick={() =>
+              setQuestions((qs) => [
+                ...qs,
+                createQuestion(
+                  config.optionsCount,
+                  config.marksPerQuestion
+                ),
+              ])
+            }
+            className="group inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 font-semibold text-white backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:bg-indigo-500/10"
+          >
+            <Plus
+              size={18}
+              className="transition-transform group-hover:rotate-90"
+            />
+
+            Add Question
+          </button>
+        </form>
+      </div>
     </Layout>
   );
 }
