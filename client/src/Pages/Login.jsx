@@ -130,13 +130,13 @@ const Login = () => {
                 {loading ? "Signing in..." : "Sign in"}
               </PremiumButton>
 
-              <button
+              {/* <button
                 type="button"
                 onClick={guestLogin}
                 className="text-sm text-zinc-300 underline hover:text-white"
               >
                 Guest login
-              </button>
+              </button> */}
             </div>
 
             <div className="flex items-center justify-between text-xs text-zinc-400">
